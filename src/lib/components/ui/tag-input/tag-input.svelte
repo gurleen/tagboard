@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { Badge } from "$lib/components/ui/badge/index.js";
-	import { cn, type WithElementRef } from "$lib/utils.js";
-	import XIcon from "@lucide/svelte/icons/x";
-	import type { HTMLInputAttributes } from "svelte/elements";
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { cn, type WithElementRef } from '$lib/utils.js';
+	import XIcon from '@lucide/svelte/icons/x';
+	import type { HTMLInputAttributes } from 'svelte/elements';
 
-	type Props = WithElementRef<Omit<HTMLInputAttributes, "type" | "value">> & {
+	type Props = WithElementRef<Omit<HTMLInputAttributes, 'type' | 'value'>> & {
 		values?: string[];
 		placeholder?: string;
 	};
@@ -12,20 +12,20 @@
 	let {
 		ref = $bindable(null),
 		values = $bindable<string[]>([]),
-		placeholder = "Add tag...",
+		placeholder = 'Add tag...',
 		class: className,
 		disabled,
 		...restProps
 	}: Props = $props();
 
-	let draft = $state("");
+	let draft = $state('');
 
 	function commit() {
 		const tag = draft.trim();
 		if (tag && !values.includes(tag)) {
 			values = [...values, tag];
 		}
-		draft = "";
+		draft = '';
 	}
 
 	function removeAt(index: number) {
@@ -33,10 +33,10 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === "Enter" || event.key === ",") {
+		if (event.key === 'Enter' || event.key === ',') {
 			event.preventDefault();
 			commit();
-		} else if (event.key === "Backspace" && draft === "" && values.length > 0) {
+		} else if (event.key === 'Backspace' && draft === '' && values.length > 0) {
 			removeAt(values.length - 1);
 		}
 	}
@@ -45,7 +45,7 @@
 <div
 	data-slot="tag-input"
 	class={cn(
-		"flex min-h-8 w-full flex-wrap items-center gap-1 rounded-none border border-input bg-transparent px-1.5 py-1 transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/50 has-disabled:opacity-50",
+		'flex min-h-8 w-full flex-wrap items-center gap-1 rounded-none border border-input bg-transparent px-1.5 py-1 transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/50 has-disabled:opacity-50',
 		className
 	)}
 >

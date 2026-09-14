@@ -1,8 +1,8 @@
-import Root from "./menu.svelte";
-import Item from "./menu-item.svelte";
-import Divider from "./menu-divider.svelte";
-import Heading from "./menu-heading.svelte";
-import Shortcut from "./menu-shortcut.svelte";
+import Root from './menu.svelte';
+import Item from './menu-item.svelte';
+import Divider from './menu-divider.svelte';
+import Heading from './menu-heading.svelte';
+import Shortcut from './menu-shortcut.svelte';
 
 export {
 	Root,
@@ -14,5 +14,5 @@ export {
 	Heading,
 	Heading as MenuHeading,
 	Shortcut,
-	Shortcut as MenuShortcut,
+	Shortcut as MenuShortcut
 };

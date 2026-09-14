@@ -1,16 +1,16 @@
 <script lang="ts" module>
-	import type { ComboboxOption } from "$lib/components/ui/combobox/combobox.svelte";
+	import type { ComboboxOption } from '$lib/components/ui/combobox/combobox.svelte';
 
 	function offsetMinutes(timeZone: string, at: Date): number {
-		const parts = new Intl.DateTimeFormat("en-US", {
+		const parts = new Intl.DateTimeFormat('en-US', {
 			timeZone,
-			hourCycle: "h23",
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-			hour: "2-digit",
-			minute: "2-digit",
-			second: "2-digit",
+			hourCycle: 'h23',
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit'
 		}).formatToParts(at);
 		const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
 		const asUtc = Date.UTC(
@@ -25,23 +25,23 @@
 	}
 
 	function formatOffset(minutes: number): string {
-		const sign = minutes < 0 ? "-" : "+";
+		const sign = minutes < 0 ? '-' : '+';
 		const abs = Math.abs(minutes);
-		const hours = String(Math.floor(abs / 60)).padStart(2, "0");
-		const mins = String(abs % 60).padStart(2, "0");
+		const hours = String(Math.floor(abs / 60)).padStart(2, '0');
+		const mins = String(abs % 60).padStart(2, '0');
 		return `UTC${sign}${hours}:${mins}`;
 	}
 
 	function buildTimezoneOptions(at: Date = new Date()): ComboboxOption[] {
 		const zones =
-			typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [];
+			typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [];
 		return zones
 			.map((zone) => {
 				const minutes = offsetMinutes(zone, at);
 				return {
 					value: zone,
-					label: `(${formatOffset(minutes)}) ${zone.replace(/_/g, " ")}`,
-					minutes,
+					label: `(${formatOffset(minutes)}) ${zone.replace(/_/g, ' ')}`,
+					minutes
 				};
 			})
 			.sort((a, b) => a.minutes - b.minutes || a.value.localeCompare(b.value))
@@ -52,15 +52,15 @@
 </script>
 
 <script lang="ts">
-	import Combobox from "$lib/components/ui/combobox/combobox.svelte";
+	import Combobox from '$lib/components/ui/combobox/combobox.svelte';
 
 	let {
-		value = $bindable(""),
-		placeholder = "Select timezone...",
-		searchPlaceholder = "Search timezones...",
-		emptyText = "No matching timezone.",
+		value = $bindable(''),
+		placeholder = 'Select timezone...',
+		searchPlaceholder = 'Search timezones...',
+		emptyText = 'No matching timezone.',
 		disabled = false,
-		class: className,
+		class: className
 	}: {
 		value?: string;
 		placeholder?: string;

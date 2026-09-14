@@ -4,10 +4,14 @@
 @layer components {
 	.blueprint-navbar {
 		background-color: var(--background);
-		box-shadow: 0 0 0 1px var(--border), 0 1px 1px rgba(17, 20, 24, 0.1);
+		box-shadow:
+			0 0 0 1px var(--border),
+			0 1px 1px rgba(17, 20, 24, 0.1);
 	}
 	.dark .blueprint-navbar {
-		box-shadow: 0 0 0 1px var(--border), 0 1px 1px rgba(0, 0, 0, 0.4);
+		box-shadow:
+			0 0 0 1px var(--border),
+			0 1px 1px rgba(0, 0, 0, 0.4);
 	}
 	.blueprint-navbar-heading {
 		color: var(--foreground);

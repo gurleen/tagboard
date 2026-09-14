@@ -1,16 +1,16 @@
 <script lang="ts">
-	import * as Popover from "$lib/components/ui/popover/index.js";
-	import * as Command from "$lib/components/ui/command/index.js";
-	import { cn } from "$lib/utils.js";
-	import type { ComboboxOption } from "./combobox.svelte";
+	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as Command from '$lib/components/ui/command/index.js';
+	import { cn } from '$lib/utils.js';
+	import type { ComboboxOption } from './combobox.svelte';
 
 	let {
 		options,
-		value = $bindable(""),
-		placeholder = "Type to search...",
-		emptyText = "No matches.",
+		value = $bindable(''),
+		placeholder = 'Type to search...',
+		emptyText = 'No matches.',
 		disabled = false,
-		class: className,
+		class: className
 	}: {
 		options: ComboboxOption[];
 		value?: string;
@@ -29,7 +29,7 @@
 </script>
 
 <Popover.Root bind:open>
-	<Popover.Trigger class={cn("block w-full", className)}>
+	<Popover.Trigger class={cn('block w-full', className)}>
 		{#snippet child({ props })}
 			<Command.Root class="overflow-visible bg-transparent" shouldFilter={false}>
 				<Command.Input

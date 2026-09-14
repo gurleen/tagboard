@@ -6,11 +6,7 @@
 </script>
 
 <script lang="ts">
-	let {
-		class: className,
-		ref = $bindable(null),
-		...restProps
-	}: NavbarDividerProps = $props();
+	let { class: className, ref = $bindable(null), ...restProps }: NavbarDividerProps = $props();
 </script>
 
 <div

@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import type { Snippet } from "svelte";
+	import type { Snippet } from 'svelte';
 
 	export type OmnibarItem<T = unknown> = {
 		value: string;
@@ -14,20 +14,20 @@
 </script>
 
 <script lang="ts" generics="T = unknown">
-	import * as Command from "$lib/components/ui/command/index.js";
-	import { cn } from "$lib/utils.js";
+	import * as Command from '$lib/components/ui/command/index.js';
+	import { cn } from '$lib/utils.js';
 
 	let {
 		open = $bindable(false),
 		items,
-		query = $bindable(""),
-		placeholder = "Search…",
-		emptyMessage = "No results found.",
-		shortcut = "k",
-		title = "Command Palette",
-		description = "Search for a command to run…",
+		query = $bindable(''),
+		placeholder = 'Search…',
+		emptyMessage = 'No results found.',
+		shortcut = 'k',
+		title = 'Command Palette',
+		description = 'Search for a command to run…',
 		class: className,
-		onSelect,
+		onSelect
 	}: {
 		open?: boolean;
 		items: OmnibarItem<T>[];
@@ -54,7 +54,7 @@
 
 	function selectItem(item: OmnibarItem<T>) {
 		open = false;
-		query = "";
+		query = '';
 		onSelect(item);
 	}
 
@@ -73,7 +73,7 @@
 	<Command.Input {placeholder} />
 	<Command.List>
 		<Command.Empty>{emptyMessage}</Command.Empty>
-		{#each groups as [group, groupItems] (group ?? "_")}
+		{#each groups as [group, groupItems] (group ?? '_')}
 			<Command.Group heading={group}>
 				{#each groupItems as item (item.value)}
 					<Command.Item

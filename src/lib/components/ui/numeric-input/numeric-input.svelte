@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { cn, type WithElementRef } from "$lib/utils.js";
-	import ChevronUpIcon from "@lucide/svelte/icons/chevron-up";
-	import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
-	import type { HTMLInputAttributes } from "svelte/elements";
+	import { cn, type WithElementRef } from '$lib/utils.js';
+	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import type { HTMLInputAttributes } from 'svelte/elements';
 
-	type Props = WithElementRef<Omit<HTMLInputAttributes, "type" | "value">> & {
+	type Props = WithElementRef<Omit<HTMLInputAttributes, 'type' | 'value'>> & {
 		value?: number | undefined;
 		min?: number;
 		max?: number;
@@ -37,10 +37,10 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === "ArrowUp") {
+		if (event.key === 'ArrowUp') {
 			event.preventDefault();
 			increment();
-		} else if (event.key === "ArrowDown") {
+		} else if (event.key === 'ArrowDown') {
 			event.preventDefault();
 			decrement();
 		}
@@ -48,7 +48,7 @@
 
 	function handleInput(event: Event & { currentTarget: HTMLInputElement }) {
 		const raw = event.currentTarget.value;
-		if (raw === "") {
+		if (raw === '') {
 			value = undefined;
 			return;
 		}
@@ -60,7 +60,7 @@
 <div
 	data-slot="numeric-input"
 	class={cn(
-		"flex h-8 w-fit items-stretch rounded-none border border-input bg-transparent transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/50 has-disabled:opacity-50",
+		'flex h-8 w-fit items-stretch rounded-none border border-input bg-transparent transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/50 has-disabled:opacity-50',
 		className
 	)}
 >
@@ -70,7 +70,7 @@
 		type="text"
 		inputmode="numeric"
 		{disabled}
-		value={value ?? ""}
+		value={value ?? ''}
 		{min}
 		{max}
 		{step}

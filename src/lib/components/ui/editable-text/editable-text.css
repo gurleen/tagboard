@@ -5,7 +5,7 @@
 	.blueprint-editable-text {
 		color: var(--foreground);
 	}
-	.blueprint-editable-text[data-placeholder="true"] {
+	.blueprint-editable-text[data-placeholder='true'] {
 		color: var(--muted-foreground);
 	}
 	.blueprint-editable-text-editing {

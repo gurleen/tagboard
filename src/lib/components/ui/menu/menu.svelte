@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { cn, type WithElementRef } from "$lib/utils.js";
-	import type { HTMLAttributes } from "svelte/elements";
+	import { cn, type WithElementRef } from '$lib/utils.js';
+	import type { HTMLAttributes } from 'svelte/elements';
 
 	let {
 		ref = $bindable(null),
@@ -15,7 +15,7 @@
 	data-slot="menu"
 	role="menu"
 	class={cn(
-		"min-w-32 overflow-x-hidden overflow-y-auto rounded-none bg-popover text-popover-foreground shadow-elevation-3",
+		'min-w-32 overflow-x-hidden overflow-y-auto rounded-none bg-popover text-popover-foreground shadow-elevation-3',
 		className
 	)}
 	{...restProps}

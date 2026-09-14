@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	export type CollapseFrom = "start" | "end";
+	export type CollapseFrom = 'start' | 'end';
 
 	function observeWidth(node: HTMLElement, onWidth: (width: number) => void) {
 		const observer = new ResizeObserver((entries) => {
@@ -11,28 +11,28 @@
 		return {
 			destroy() {
 				observer.disconnect();
-			},
+			}
 		};
 	}
 </script>
 
 <script lang="ts" generics="T">
-	import { cn } from "$lib/utils.js";
-	import * as Popover from "$lib/components/ui/popover/index.js";
-	import * as Menu from "$lib/components/ui/menu/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { MoreHorizontal } from "@lucide/svelte";
-	import type { Snippet } from "svelte";
+	import { cn } from '$lib/utils.js';
+	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as Menu from '$lib/components/ui/menu/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { MoreHorizontal } from '@lucide/svelte';
+	import type { Snippet } from 'svelte';
 
 	let {
 		items,
 		item,
 		overflow,
 		visibleItemRenderer,
-		collapseFrom = "start",
+		collapseFrom = 'start',
 		minVisibleItems = 0,
 		gap = 8,
-		class: className,
+		class: className
 	}: {
 		items: T[];
 		item: Snippet<[T, number]>;
@@ -70,11 +70,14 @@
 			return { visibleCount: n, hiddenCount: 0 };
 		}
 
-		const widths = collapseFrom === "start" ? itemWidths.slice().reverse() : itemWidths.slice();
+		const widths = collapseFrom === 'start' ? itemWidths.slice().reverse() : itemWidths.slice();
 
 		for (let visibleCount = n; visibleCount >= 0; visibleCount--) {
 			if (visibleCount <= minVisibleItems) {
-				return { visibleCount: Math.min(minVisibleItems, n), hiddenCount: n - Math.min(minVisibleItems, n) };
+				return {
+					visibleCount: Math.min(minVisibleItems, n),
+					hiddenCount: n - Math.min(minVisibleItems, n)
+				};
 			}
 			const visibleWidth = widths.slice(0, visibleCount).reduce((sum, w) => sum + w, 0);
 			const gaps = gap * visibleCount; // visible items + overflow indicator
@@ -82,15 +85,18 @@
 				return { visibleCount, hiddenCount: n - visibleCount };
 			}
 		}
-		return { visibleCount: Math.min(minVisibleItems, n), hiddenCount: Math.max(n - minVisibleItems, 0) };
+		return {
+			visibleCount: Math.min(minVisibleItems, n),
+			hiddenCount: Math.max(n - minVisibleItems, 0)
+		};
 	});
 
 	const visibleItems = $derived.by(() => {
 		const { visibleCount } = layout;
-		if (collapseFrom === "start") {
+		if (collapseFrom === 'start') {
 			return items.slice(items.length - visibleCount).map((value, i) => ({
 				value,
-				index: items.length - visibleCount + i,
+				index: items.length - visibleCount + i
 			}));
 		}
 		return items.slice(0, visibleCount).map((value, i) => ({ value, index: i }));
@@ -99,17 +105,19 @@
 	const hiddenItems = $derived.by(() => {
 		const { hiddenCount } = layout;
 		if (hiddenCount === 0) return [];
-		return collapseFrom === "start" ? items.slice(0, hiddenCount) : items.slice(items.length - hiddenCount);
+		return collapseFrom === 'start'
+			? items.slice(0, hiddenCount)
+			: items.slice(items.length - hiddenCount);
 	});
 </script>
 
 <div
 	bind:clientWidth={containerWidth}
 	data-slot="overflow-list"
-	class={cn("flex min-w-0 items-center overflow-hidden", className)}
+	class={cn('flex min-w-0 items-center overflow-hidden', className)}
 	style={`gap: ${gap}px;`}
 >
-	{#if collapseFrom === "start" && hiddenItems.length > 0}
+	{#if collapseFrom === 'start' && hiddenItems.length > 0}
 		<div use:observeWidth={(w) => (overflowWidth = w)} class="shrink-0">
 			{#if overflow}
 				{@render overflow(hiddenItems)}
@@ -140,7 +148,7 @@
 		</div>
 	{/each}
 
-	{#if collapseFrom === "end" && hiddenItems.length > 0}
+	{#if collapseFrom === 'end' && hiddenItems.length > 0}
 		<div use:observeWidth={(w) => (overflowWidth = w)} class="shrink-0">
 			{#if overflow}
 				{@render overflow(hiddenItems)}

@@ -1,42 +1,75 @@
-# sv
+# Tagboard
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A desktop application for putting social media posts on a video board.
 
-## Creating a project
+An operator collects posts from X and Instagram, reviews them, arranges the approved ones on a
+board, and puts that board on air. The board renders in a second window that is pushed fullscreen
+onto whichever display feeds the video wall, where it rotates through the posts on a grid.
 
-If you're seeing this, you've probably already done this step. Congrats!
+The application is a SvelteKit front end packaged with [Tauri](https://tauri.app). All state —
+posts, boards, and downloaded media — lives in a local SQLite database and a local media cache, so
+the board keeps rendering after the network goes away and everything survives a restart.
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Requirements
 
-To recreate this project with the same configuration:
+- [Bun](https://bun.sh)
+- A Rust toolchain (1.77.2 or later) and the platform prerequisites listed in
+  [Tauri's setup guide](https://tauri.app/start/prerequisites/)
 
-```sh
-# recreate this project
-bun x sv@0.17.0 create --template minimal --types ts --add prettier eslint tailwindcss="plugins:typography,forms" sveltekit-adapter="adapter:auto" drizzle="database:sqlite+sqlite:libsql" ai-tools="ide:claude-code,cursor,opencode+delivery:plugin+tools:mcp,svelte-code-writer,svelte-core-bestpractices,svelte-file-editor+mcpSetup:local" --install bun svelte-app-starter
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+## Running
 
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+bun install
+bun run tauri:dev
 ```
 
-## Building
+`tauri:dev` starts the Vite dev server and the Rust host together. Running `bun run dev` alone opens
+the front end in a browser, where the database and media cache do not exist; every page detects this
+and says so rather than failing.
 
-To create a production version of your app:
+## Scripts
+
+| Script                | Purpose                                                 |
+| --------------------- | ------------------------------------------------------- |
+| `bun run tauri:dev`   | Run the desktop application against the Vite dev server |
+| `bun run tauri:build` | Produce a distributable application bundle              |
+| `bun run check`       | Type-check the Svelte and TypeScript sources            |
+| `bun run lint`        | Prettier and ESLint                                     |
+| `bun run format`      | Rewrite sources with Prettier                           |
+| `bun run db:generate` | Generate a migration from a schema change (see below)   |
+| `bun run db:studio`   | Browse the database with Drizzle Studio                 |
+
+## Changing the schema
+
+The schema is declared once, in `src/lib/database/schema.ts`, and migrations are generated from it:
 
 ```sh
-npm run build
+bun run db:generate --name <precise_name>
 ```
 
-You can preview the production build with `npm run preview`.
+Always pass `--name`; drizzle-kit otherwise invents a random one. The generated file lands in
+`drizzle/`, which is compiled into the Rust binary and applied at startup. `db:push` and `db:migrate`
+are deliberately not wired to the application database — see the note in `drizzle.config.ts`.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## Where things live
+
+```
+src/lib/database/     Drizzle schema and the client that talks to Rust
+src/lib/ingestion/    Permalink parsing and the post-retrieval interface
+src/lib/media/        Media cache bindings
+src/lib/board/        Board-window bindings
+src/lib/repository/   Every query the panel makes, by subject
+src/routes/(panel)/   The control panel (main window)
+src/routes/board/     The rotating grid (board window)
+src-tauri/src/        SQLite host, media downloader, window management
+drizzle/              Generated migrations, embedded in the binary
+docs/                 Architecture, data model, and the interface style guide
+```
+
+## Documentation
+
+- [`docs/architecture.md`](docs/architecture.md) — the two windows, the database bridge, the media cache
+- [`docs/data-model.md`](docs/data-model.md) — every table and what each column is for
+- [`docs/post-retrieval.md`](docs/post-retrieval.md) — how posts get in, and the provider decision still open
+- [`docs/blueprint-style-guide.md`](docs/blueprint-style-guide.md) — the interface style the panel follows
+- [`docs/blueprint-component-inventory.md`](docs/blueprint-component-inventory.md) — the component library

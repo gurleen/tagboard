@@ -25,36 +25,36 @@ in `button.svelte`.
 
 ### Light (`:root`)
 
-| shadcn token | Blueprint source | oklch |
-|---|---|---|
-| `--background` | white | `oklch(1 0 0)` |
-| `--foreground` | Blueprint text `#182026` | `oklch(0.238 0.016 240.779)` |
-| `--primary` | Blue3 `#2D72D2` | `oklch(0.56 0.163 257.63)` |
-| `--secondary` / `--accent` | Light Gray3 `#E5E8EB` | `oklch(0.93 0.005 247.88)` |
-| `--muted` | Light Gray4 `#EDEFF2` | `oklch(0.951 0.005 258.325)` |
-| `--muted-foreground` | Gray1 `#5F6B7C` | `oklch(0.524 0.031 257.074)` |
-| `--destructive` | Red3 `#CD4246` | `oklch(0.579 0.175 22.938)` |
-| `--success` | Green3 `#238551` | `oklch(0.548 0.12 155.194)` |
-| `--warning` | Orange3 `#C87619` | `oklch(0.642 0.14 61.839)` |
-| `--border` / `--input` | Light Gray1 `#D3D8DE` | `oklch(0.88 0.01 252.819)` |
-| `--ring` | Blue4 `#4C90F0` | `oklch(0.655 0.159 257.399)` |
-| `--chart-1..5` | Blue3 / Green3 / Orange3 / Red3 / Gray3 | see `layout.css` |
+| shadcn token               | Blueprint source                        | oklch                        |
+| -------------------------- | --------------------------------------- | ---------------------------- |
+| `--background`             | white                                   | `oklch(1 0 0)`               |
+| `--foreground`             | Blueprint text `#182026`                | `oklch(0.238 0.016 240.779)` |
+| `--primary`                | Blue3 `#2D72D2`                         | `oklch(0.56 0.163 257.63)`   |
+| `--secondary` / `--accent` | Light Gray3 `#E5E8EB`                   | `oklch(0.93 0.005 247.88)`   |
+| `--muted`                  | Light Gray4 `#EDEFF2`                   | `oklch(0.951 0.005 258.325)` |
+| `--muted-foreground`       | Gray1 `#5F6B7C`                         | `oklch(0.524 0.031 257.074)` |
+| `--destructive`            | Red3 `#CD4246`                          | `oklch(0.579 0.175 22.938)`  |
+| `--success`                | Green3 `#238551`                        | `oklch(0.548 0.12 155.194)`  |
+| `--warning`                | Orange3 `#C87619`                       | `oklch(0.642 0.14 61.839)`   |
+| `--border` / `--input`     | Light Gray1 `#D3D8DE`                   | `oklch(0.88 0.01 252.819)`   |
+| `--ring`                   | Blue4 `#4C90F0`                         | `oklch(0.655 0.159 257.399)` |
+| `--chart-1..5`             | Blue3 / Green3 / Orange3 / Red3 / Gray3 | see `layout.css`             |
 
 ### Dark (`.dark`)
 
-| shadcn token | Blueprint source | oklch |
-|---|---|---|
-| `--background` | Dark Gray1 `#1C2127` | `oklch(0.245 0.014 253.08)` |
-| `--foreground` | Light Gray5 `#F6F7F9` | `oklch(0.976 0.003 264.542)` |
-| `--card` / `--popover` | Dark Gray2 `#252A31` | `oklch(0.283 0.015 256.792)` |
-| `--primary` | Blue4 `#4C90F0` | `oklch(0.655 0.159 257.399)` |
-| `--secondary` / `--accent` / `--muted` | Dark Gray3 `#2F343C` | `oklch(0.323 0.016 259.802)` |
-| `--muted-foreground` | Gray4 `#ABB3BF` | `oklch(0.764 0.019 258.361)` |
-| `--destructive` | Red4 `#E76A6E` | `oklch(0.676 0.156 20.217)` |
-| `--success` | Green4 `#32A467` | `oklch(0.64 0.137 155.446)` |
-| `--warning` | Orange4 `#EC9A3C` | `oklch(0.753 0.144 65.588)` |
-| `--border` / `--input` | Dark Gray4 `#383E47` | `oklch(0.362 0.018 258.372)` |
-| `--ring` | Blue5 `#8ABBFF` | `oklch(0.784 0.111 256.703)` |
+| shadcn token                           | Blueprint source      | oklch                        |
+| -------------------------------------- | --------------------- | ---------------------------- |
+| `--background`                         | Dark Gray1 `#1C2127`  | `oklch(0.245 0.014 253.08)`  |
+| `--foreground`                         | Light Gray5 `#F6F7F9` | `oklch(0.976 0.003 264.542)` |
+| `--card` / `--popover`                 | Dark Gray2 `#252A31`  | `oklch(0.283 0.015 256.792)` |
+| `--primary`                            | Blue4 `#4C90F0`       | `oklch(0.655 0.159 257.399)` |
+| `--secondary` / `--accent` / `--muted` | Dark Gray3 `#2F343C`  | `oklch(0.323 0.016 259.802)` |
+| `--muted-foreground`                   | Gray4 `#ABB3BF`       | `oklch(0.764 0.019 258.361)` |
+| `--destructive`                        | Red4 `#E76A6E`        | `oklch(0.676 0.156 20.217)`  |
+| `--success`                            | Green4 `#32A467`      | `oklch(0.64 0.137 155.446)`  |
+| `--warning`                            | Orange4 `#EC9A3C`     | `oklch(0.753 0.144 65.588)`  |
+| `--border` / `--input`                 | Dark Gray4 `#383E47`  | `oklch(0.362 0.018 258.372)` |
+| `--ring`                               | Blue5 `#8ABBFF`       | `oklch(0.784 0.111 256.703)` |
 
 `--success`/`--warning` are new tokens (shadcn's default set only ships `--destructive`); they
 follow the exact same naming pattern (`--success-foreground`, `--warning-foreground`) and are
@@ -76,12 +76,12 @@ defined as CSS custom properties in `layout.css` (`--shadow-elevation-1` .. `-4`
 `@theme inline` so `shadow-elevation-N` utility classes are available), with heavier alpha
 values in `.dark`:
 
-| Level | Usage |
-|---|---|
+| Level                | Usage                                    |
+| -------------------- | ---------------------------------------- |
 | `shadow-elevation-1` | Buttons (default/outline variants), Card |
-| `shadow-elevation-2` | Tooltip |
-| `shadow-elevation-3` | Select content, Dropdown menu content |
-| `shadow-elevation-4` | Dialog content |
+| `shadow-elevation-2` | Tooltip                                  |
+| `shadow-elevation-3` | Select content, Dropdown menu content    |
+| `shadow-elevation-4` | Dialog content                           |
 
 ## Typography
 
@@ -92,7 +92,7 @@ Base font size is 14px, which matches Tailwind's `text-sm` — components defaul
 ## Component conventions
 
 **Tinted intent colors.** Rather than Blueprint's solid-fill intent buttons, this codebase's
-own established pattern (set by the original `destructive` button variant) is a *tinted*
+own established pattern (set by the original `destructive` button variant) is a _tinted_
 background: `bg-<intent>/10 text-<intent> hover:bg-<intent>/20`, doubling opacity in `.dark`
 (`dark:bg-<intent>/20 dark:hover:bg-<intent>/30`). Apply this same ramp to any new intent
 variant (see `success`/`warning` on `Button` and `Badge`) instead of switching to solid fills.
@@ -111,11 +111,16 @@ variant (see `success`/`warning` on `Button` and `Badge`) instead of switching t
 </script>
 
 <script lang="ts">
-	import { cn, type WithElementRef } from "$lib/utils.js";
+	import { cn, type WithElementRef } from '$lib/utils.js';
 	let { ref = $bindable(null), class: className, variant, size, ...restProps } = $props();
 </script>
 
-<element bind:this={ref} data-slot="x" class={cn(xVariants({ variant, size }), className)} {...restProps} />
+<element
+	bind:this={ref}
+	data-slot="x"
+	class={cn(xVariants({ variant, size }), className)}
+	{...restProps}
+/>
 ```
 
 Use `data-slot` on every root element, keep variant/size keys aligned with the shadcn-svelte

@@ -1,21 +1,21 @@
 <script lang="ts">
-	import * as Popover from "$lib/components/ui/popover/index.js";
-	import * as Command from "$lib/components/ui/command/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { Badge } from "$lib/components/ui/badge/index.js";
-	import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
-	import XIcon from "@lucide/svelte/icons/x";
-	import { cn } from "$lib/utils.js";
-	import type { ComboboxOption } from "./combobox.svelte";
+	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as Command from '$lib/components/ui/command/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
+	import XIcon from '@lucide/svelte/icons/x';
+	import { cn } from '$lib/utils.js';
+	import type { ComboboxOption } from './combobox.svelte';
 
 	let {
 		options,
 		value = $bindable([]),
-		placeholder = "Select options...",
-		searchPlaceholder = "Search...",
-		emptyText = "No results found.",
+		placeholder = 'Select options...',
+		searchPlaceholder = 'Search...',
+		emptyText = 'No results found.',
 		disabled = false,
-		class: className,
+		class: className
 	}: {
 		options: ComboboxOption[];
 		value?: string[];
@@ -51,7 +51,7 @@
 				role="combobox"
 				aria-expanded={open}
 				{disabled}
-				class={cn("h-auto min-h-8 w-full justify-between font-normal", className)}
+				class={cn('h-auto min-h-8 w-full justify-between font-normal', className)}
 			>
 				<span class="flex flex-1 flex-wrap items-center gap-1">
 					{#if selectedOptions.length === 0}

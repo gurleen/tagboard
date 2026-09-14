@@ -6,8 +6,8 @@ import {
 	sortFn_alphanumeric,
 	sortFn_basic,
 	sortFn_datetime,
-	tableFeatures,
-} from "@tanstack/svelte-table";
+	tableFeatures
+} from '@tanstack/svelte-table';
 
 export const dataTableFeatures = tableFeatures({
 	rowSortingFeature,
@@ -15,14 +15,14 @@ export const dataTableFeatures = tableFeatures({
 	sortFns: {
 		alphanumeric: sortFn_alphanumeric,
 		basic: sortFn_basic,
-		datetime: sortFn_datetime,
+		datetime: sortFn_datetime
 	},
 	rowPaginationFeature,
-	paginatedRowModel: createPaginatedRowModel(),
+	paginatedRowModel: createPaginatedRowModel()
 });
 
 export type DataTableFeatures = typeof dataTableFeatures;
 export type DataTableColumnDef<
-	TData extends import("@tanstack/svelte-table").RowData,
-	TValue = unknown,
-> = import("@tanstack/svelte-table").ColumnDef<DataTableFeatures, TData, TValue>;
+	TData extends import('@tanstack/svelte-table').RowData,
+	TValue = unknown
+> = import('@tanstack/svelte-table').ColumnDef<DataTableFeatures, TData, TValue>;

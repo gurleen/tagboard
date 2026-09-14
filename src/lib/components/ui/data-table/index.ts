@@ -1,7 +1,7 @@
-import Root from "./data-table.svelte";
+import Root from './data-table.svelte';
 
 export {
 	Root,
 	//
-	Root as DataTable,
+	Root as DataTable
 };

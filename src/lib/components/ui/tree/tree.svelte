@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import type { LucideIcon } from "@lucide/svelte";
+	import type { LucideIcon } from '@lucide/svelte';
 
 	export type TreeNodeData<T = unknown> = {
 		id: string;
@@ -14,15 +14,12 @@
 		data?: T;
 	};
 
-	export type TreeNodeEventHandler<T = unknown> = (
-		node: TreeNodeData<T>,
-		path: number[],
-	) => void;
+	export type TreeNodeEventHandler<T = unknown> = (node: TreeNodeData<T>, path: number[]) => void;
 </script>
 
 <script lang="ts" generics="T = unknown">
-	import { cn } from "$lib/utils.js";
-	import TreeNodeRow from "./tree-node.svelte";
+	import { cn } from '$lib/utils.js';
+	import TreeNodeRow from './tree-node.svelte';
 
 	let {
 		contents = $bindable([]),
@@ -54,7 +51,12 @@
 	}
 </script>
 
-<ul data-slot="tree" role="tree" class={cn("min-w-0 text-xs/relaxed text-foreground", className)} {...restProps}>
+<ul
+	data-slot="tree"
+	role="tree"
+	class={cn('min-w-0 text-xs/relaxed text-foreground', className)}
+	{...restProps}
+>
 	{#each contents as node, index (node.id)}
 		<TreeNodeRow
 			{node}

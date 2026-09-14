@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { cn, type WithElementRef } from "$lib/utils.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import { ChevronLeft } from "@lucide/svelte";
-	import type { HTMLAttributes } from "svelte/elements";
-	import type { Snippet } from "svelte";
+	import { cn, type WithElementRef } from '$lib/utils.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { ChevronLeft } from '@lucide/svelte';
+	import type { HTMLAttributes } from 'svelte/elements';
+	import type { Snippet } from 'svelte';
 
 	let {
 		ref = $bindable(null),
@@ -21,9 +21,17 @@
 	} = $props();
 </script>
 
-<div bind:this={ref} data-slot="panel" class={cn("flex min-h-0 flex-1 flex-col", className)} {...restProps}>
+<div
+	bind:this={ref}
+	data-slot="panel"
+	class={cn('flex min-h-0 flex-1 flex-col', className)}
+	{...restProps}
+>
 	{#if showHeader}
-		<div data-slot="panel-header" class="flex min-h-9 shrink-0 items-center gap-1 border-b border-border px-1">
+		<div
+			data-slot="panel-header"
+			class="flex min-h-9 shrink-0 items-center gap-1 border-b border-border px-1"
+		>
 			{#if onBack}
 				<Button variant="ghost" size="icon-sm" onclick={onBack} aria-label="Back">
 					<ChevronLeft />

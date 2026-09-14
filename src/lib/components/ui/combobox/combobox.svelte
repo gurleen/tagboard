@@ -7,20 +7,20 @@
 </script>
 
 <script lang="ts">
-	import * as Popover from "$lib/components/ui/popover/index.js";
-	import * as Command from "$lib/components/ui/command/index.js";
-	import { Button } from "$lib/components/ui/button/index.js";
-	import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
-	import { cn } from "$lib/utils.js";
+	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as Command from '$lib/components/ui/command/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
+	import { cn } from '$lib/utils.js';
 
 	let {
 		options,
-		value = $bindable(""),
-		placeholder = "Select an option...",
-		searchPlaceholder = "Search...",
-		emptyText = "No results found.",
+		value = $bindable(''),
+		placeholder = 'Select an option...',
+		searchPlaceholder = 'Search...',
+		emptyText = 'No results found.',
 		disabled = false,
-		class: className,
+		class: className
 	}: {
 		options: ComboboxOption[];
 		value?: string;
@@ -36,7 +36,7 @@
 	const selectedLabel = $derived(options.find((option) => option.value === value)?.label);
 
 	function handleSelect(currentValue: string) {
-		value = currentValue === value ? "" : currentValue;
+		value = currentValue === value ? '' : currentValue;
 		open = false;
 	}
 </script>
@@ -50,7 +50,11 @@
 				role="combobox"
 				aria-expanded={open}
 				{disabled}
-				class={cn("h-8 w-full justify-between font-normal", !selectedLabel && "text-muted-foreground", className)}
+				class={cn(
+					'h-8 w-full justify-between font-normal',
+					!selectedLabel && 'text-muted-foreground',
+					className
+				)}
 			>
 				{selectedLabel ?? placeholder}
 				<ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />

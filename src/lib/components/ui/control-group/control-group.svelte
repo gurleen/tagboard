@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { cn, type WithElementRef } from "$lib/utils.js";
-	import type { HTMLAttributes } from "svelte/elements";
+	import { cn, type WithElementRef } from '$lib/utils.js';
+	import type { HTMLAttributes } from 'svelte/elements';
 
 	let {
 		ref = $bindable(null),
@@ -18,12 +18,12 @@
 <div
 	bind:this={ref}
 	data-slot="control-group"
-	data-vertical={vertical ? "" : undefined}
+	data-vertical={vertical ? '' : undefined}
 	class={cn(
-		"blueprint-control-group inline-flex",
-		vertical ? "flex-col" : "flex-row",
-		fill && "flex w-full",
-		className,
+		'blueprint-control-group inline-flex',
+		vertical ? 'flex-col' : 'flex-row',
+		fill && 'flex w-full',
+		className
 	)}
 	{...restProps}
 >

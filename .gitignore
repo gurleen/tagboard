@@ -24,8 +24,13 @@ vite.config.ts.timestamp-*
 # SQLite
 *.db
 
+# Tauri
+/src-tauri/target
+/src-tauri/gen/schemas
+
 # AI
 .claude
 .cursor
 .opencode
-.vscode.codegraph/
+.vscode
+.codegraph/

@@ -2,7 +2,10 @@
 	import { cn, type WithElementRef } from '$lib/utils.js';
 	import type { HTMLAttributes } from 'svelte/elements';
 
-	export type EditableTextProps = Omit<WithElementRef<HTMLAttributes<HTMLDivElement>>, 'onchange'> & {
+	export type EditableTextProps = Omit<
+		WithElementRef<HTMLAttributes<HTMLDivElement>>,
+		'onchange'
+	> & {
 		value?: string;
 		placeholder?: string;
 		multiline?: boolean;
@@ -93,8 +96,7 @@
 				maxlength={maxLength}
 				onblur={confirm}
 				onkeydown={handleKeydown}
-				oninput={handleInput}
-			></textarea>
+				oninput={handleInput}></textarea>
 		{:else}
 			<input
 				bind:this={inputEl}

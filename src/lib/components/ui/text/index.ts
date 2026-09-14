@@ -1,1 +1,1 @@
-export { default as Text } from "./text.svelte";
+export { default as Text } from './text.svelte';

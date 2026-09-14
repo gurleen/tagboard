@@ -2,9 +2,9 @@
 @import '../lib/components/ui/button/button.css';
 @import '../lib/components/ui/navbar/navbar.css';
 @import '../lib/components/ui/editable-text/editable-text.css';
-@import "tw-animate-css";
-@import "shadcn-svelte/tailwind.css";
-@import "@fontsource-variable/ibm-plex-sans";
+@import 'tw-animate-css';
+@import 'shadcn-svelte/tailwind.css';
+@import '@fontsource-variable/ibm-plex-sans';
 
 @custom-variant dark (&:is(.dark *));
 @plugin '@tailwindcss/forms';
@@ -45,8 +45,12 @@
 	--radius: 0rem;
 	--shadow-elevation-1: 0 0 0 1px rgba(17, 20, 24, 0.1), 0 1px 1px rgba(17, 20, 24, 0.2);
 	--shadow-elevation-2: 0 0 0 1px rgba(17, 20, 24, 0.1), 0 2px 4px rgba(17, 20, 24, 0.2);
-	--shadow-elevation-3: 0 0 0 1px rgba(17, 20, 24, 0.1), 0 4px 8px rgba(17, 20, 24, 0.2), 0 8px 24px rgba(17, 20, 24, 0.2);
-	--shadow-elevation-4: 0 0 0 1px rgba(17, 20, 24, 0.1), 0 8px 16px rgba(17, 20, 24, 0.2), 0 18px 46px 6px rgba(17, 20, 24, 0.2);
+	--shadow-elevation-3:
+		0 0 0 1px rgba(17, 20, 24, 0.1), 0 4px 8px rgba(17, 20, 24, 0.2),
+		0 8px 24px rgba(17, 20, 24, 0.2);
+	--shadow-elevation-4:
+		0 0 0 1px rgba(17, 20, 24, 0.1), 0 8px 16px rgba(17, 20, 24, 0.2),
+		0 18px 46px 6px rgba(17, 20, 24, 0.2);
 	--sidebar: oklch(0.951 0.005 258.325);
 	--sidebar-foreground: oklch(0.238 0.016 240.779);
 	--sidebar-primary: oklch(0.56 0.163 257.63);
@@ -87,8 +91,12 @@
 	--chart-5: oklch(0.764 0.019 258.361);
 	--shadow-elevation-1: 0 0 0 1px rgba(17, 20, 24, 0.4), 0 1px 1px rgba(17, 20, 24, 0.4);
 	--shadow-elevation-2: 0 0 0 1px rgba(17, 20, 24, 0.4), 0 2px 4px rgba(17, 20, 24, 0.4);
-	--shadow-elevation-3: 0 0 0 1px rgba(17, 20, 24, 0.4), 0 4px 8px rgba(17, 20, 24, 0.4), 0 8px 24px rgba(17, 20, 24, 0.4);
-	--shadow-elevation-4: 0 0 0 1px rgba(17, 20, 24, 0.4), 0 8px 16px rgba(17, 20, 24, 0.4), 0 18px 46px 6px rgba(17, 20, 24, 0.4);
+	--shadow-elevation-3:
+		0 0 0 1px rgba(17, 20, 24, 0.4), 0 4px 8px rgba(17, 20, 24, 0.4),
+		0 8px 24px rgba(17, 20, 24, 0.4);
+	--shadow-elevation-4:
+		0 0 0 1px rgba(17, 20, 24, 0.4), 0 8px 16px rgba(17, 20, 24, 0.4),
+		0 18px 46px 6px rgba(17, 20, 24, 0.4);
 	--sidebar: oklch(0.283 0.015 256.792);
 	--sidebar-foreground: oklch(0.976 0.003 264.542);
 	--sidebar-primary: oklch(0.655 0.159 257.399);
