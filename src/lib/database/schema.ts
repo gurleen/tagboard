@@ -184,14 +184,19 @@ export type BoardTheme = {
 	backgroundImagePath?: string;
 };
 
+/**
+ * The broadcast package's basketball v2 look: dark glass panels over a near-black
+ * wall, Zuume type, and the home team's secondary colour (Drexel gold) as the
+ * marker along each post's edge.
+ */
 export const DEFAULT_BOARD_THEME: BoardTheme = {
-	backgroundColor: '#0b0f14',
-	surfaceColor: '#161c24',
-	textColor: '#f6f7f9',
-	accentColor: '#4c90f0',
-	fontFamily: 'IBM Plex Sans Variable',
+	backgroundColor: '#05070a',
+	surfaceColor: '#0e1116',
+	textColor: '#ffffff',
+	accentColor: '#ffc600',
+	fontFamily: 'Zuume',
 	textScale: 1,
-	cornerRadiusPx: 8
+	cornerRadiusPx: 12
 };
 
 /**

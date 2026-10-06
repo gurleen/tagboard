@@ -42,7 +42,7 @@
 </script>
 
 <article class="tile">
-	<header class="identity">
+	<header class="panel identity">
 		{#await avatarUrl then url}
 			{#if url}
 				<img class="avatar" src={url} alt="" />
@@ -61,23 +61,27 @@
 		{/if}
 	</header>
 
-	{#if record.body}
-		<p class="body">{record.body}</p>
+	{#if record.body || attachment}
+		<div class="panel content">
+			{#if record.body}
+				<p class="body">{record.body}</p>
+			{/if}
+
+			{#await attachmentUrl then url}
+				{#if url && attachment?.kind === 'video'}
+					<video class="attachment" src={url} autoplay muted loop playsinline></video>
+				{:else if url}
+					<img class="attachment" src={url} alt={attachment?.description ?? ''} />
+				{/if}
+			{/await}
+		</div>
 	{/if}
 
-	{#await attachmentUrl then url}
-		{#if url && attachment?.kind === 'video'}
-			<video class="attachment" src={url} autoplay muted loop playsinline></video>
-		{:else if url}
-			<img class="attachment" src={url} alt={attachment?.description ?? ''} />
-		{/if}
-	{/await}
-
 	{#if board.showMetrics || (board.showTimestamp && timestamp)}
-		<footer class="meta">
+		<footer class="panel strip">
 			{#if board.showMetrics}
-				<span>{formatCount(record.likeCount)} likes</span>
-				<span>{formatCount(record.repostCount)} reposts</span>
+				<span><strong>{formatCount(record.likeCount)}</strong> likes</span>
+				<span><strong>{formatCount(record.repostCount)}</strong> reposts</span>
 			{/if}
 			{#if board.showTimestamp && timestamp}
 				<span class="timestamp">{timestamp}</span>
@@ -87,32 +91,94 @@
 </article>
 
 <style>
+	/*
+	 * A post is built like a broadcast lower third: a panel naming the author,
+	 * a panel holding the post, and a strip of detail beneath, separated by
+	 * 4-unit seams. Outer corners take the board's radius, seams take 3.
+	 */
 	.tile {
+		--seam: calc(3 * var(--unit));
 		display: flex;
 		/* A post is as tall as it is and no taller; the cell it sits in is only a
 		   ceiling, which a long caption over a tall photograph can still reach. */
-		max-height: 100%;
+		min-height: 0;
+		flex: 0 1 auto;
 		flex-direction: column;
-		gap: 0.75em;
-		overflow: hidden;
-		padding: 1.25em;
-		background: var(--board-surface);
-		border-radius: var(--board-radius);
+		gap: calc(4 * var(--unit));
+		filter: drop-shadow(0 calc(4 * var(--unit)) calc(18 * var(--unit)) rgb(0 0 0 / 0.36));
 		color: var(--board-text);
+	}
+
+	/* Dark glass: the surface at 82%, glazed from clear at the top to 30% black
+	   at the foot. */
+	.panel {
+		position: relative;
+		border-radius: var(--seam);
+		background:
+			linear-gradient(to bottom, transparent, rgb(0 0 0 / 0.3)),
+			color-mix(in srgb, var(--board-surface) 82%, transparent);
+	}
+
+	.panel:first-child {
+		border-top-left-radius: var(--board-radius);
+		border-top-right-radius: var(--board-radius);
+	}
+
+	.panel:last-child {
+		border-bottom-right-radius: var(--board-radius);
+		border-bottom-left-radius: var(--board-radius);
+	}
+
+	/* The hairline edge, lit from above and fading to a trace by 60% down. */
+	.panel::before {
+		position: absolute;
+		padding: 1px;
+		border-radius: inherit;
+		background: linear-gradient(
+			to bottom,
+			rgb(255 255 255 / 0.45),
+			rgb(255 255 255 / 0.06) 60%,
+			rgb(255 255 255 / 0.06)
+		);
+		content: '';
+		inset: 0;
+		-webkit-mask:
+			linear-gradient(#000 0 0) content-box,
+			linear-gradient(#000 0 0);
+		-webkit-mask-composite: xor;
+		mask:
+			linear-gradient(#000 0 0) content-box,
+			linear-gradient(#000 0 0);
+		mask-composite: exclude;
+		pointer-events: none;
 	}
 
 	.identity {
 		display: flex;
 		flex-shrink: 0;
 		align-items: center;
-		gap: 0.6em;
+		gap: calc(18 * var(--unit));
+		overflow: hidden;
+		padding: calc(14 * var(--unit)) calc(22 * var(--unit)) calc(14 * var(--unit))
+			calc(26 * var(--unit));
+	}
+
+	/* The marker: the accent colour down the leading edge of the first panel. */
+	.identity::after {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: calc(8 * var(--unit));
+		background: var(--board-accent);
+		content: '';
 	}
 
 	.avatar {
-		width: 2.6em;
-		height: 2.6em;
+		width: calc(64 * var(--unit));
+		height: calc(64 * var(--unit));
 		flex-shrink: 0;
-		border-radius: 50%;
+		border-radius: var(--seam);
 		object-fit: cover;
 	}
 
@@ -120,26 +186,36 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: var(--board-accent);
-		font-weight: 600;
+		background:
+			linear-gradient(to bottom, transparent, rgb(0 0 0 / 0.3)),
+			color-mix(in srgb, var(--board-accent) 78%, rgb(0 0 0 / 0.35));
+		font-size: 1.6em;
+		font-weight: 700;
 	}
 
 	.names {
 		min-width: 0;
 		flex: 1;
+		text-transform: uppercase;
 	}
 
 	.name {
 		overflow: hidden;
-		font-weight: 600;
+		font-size: 1.75em;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+		line-height: 1;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
 	.handle {
 		overflow: hidden;
-		font-size: 0.82em;
-		opacity: 0.65;
+		margin-top: 0.15em;
+		color: color-mix(in srgb, var(--board-text) 70%, transparent);
+		font-size: 0.95em;
+		letter-spacing: 0.09em;
+		line-height: 1.1;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
@@ -148,15 +224,27 @@
 		display: flex;
 		flex-shrink: 0;
 		align-items: center;
+		color: color-mix(in srgb, var(--board-text) 70%, transparent);
 		font-size: 1.3em;
-		opacity: 0.75;
+	}
+
+	.content {
+		display: flex;
+		min-height: 0;
+		flex: 0 1 auto;
+		flex-direction: column;
+		gap: calc(16 * var(--unit));
+		overflow: hidden;
+		padding: calc(20 * var(--unit)) calc(26 * var(--unit));
 	}
 
 	.body {
 		overflow: hidden;
+		flex-shrink: 0;
 		margin: 0;
-		font-size: 1.05em;
-		line-height: 1.35;
+		font-size: 1.4em;
+		line-height: 1.12;
+		letter-spacing: 0.01em;
 	}
 
 	.attachment {
@@ -165,17 +253,32 @@
 		   cannot hold it; `cover` would crop a portrait photograph to a band. */
 		flex: 0 1 auto;
 		width: 100%;
-		border-radius: calc(var(--board-radius) * 0.6);
+		border-radius: var(--seam);
 		object-fit: contain;
-		object-position: top center;
+		object-position: top left;
 	}
 
-	.meta {
+	/* The strip: denser glass, Regular labels after Bold values. */
+	.strip {
 		display: flex;
 		flex-shrink: 0;
-		gap: 1em;
-		font-size: 0.78em;
-		opacity: 0.6;
+		align-items: baseline;
+		gap: calc(24 * var(--unit));
+		padding: calc(8 * var(--unit)) calc(26 * var(--unit));
+		background:
+			linear-gradient(to bottom, transparent, rgb(0 0 0 / 0.3)),
+			color-mix(in srgb, var(--board-surface) 88%, transparent);
+		color: color-mix(in srgb, var(--board-text) 65%, transparent);
+		font-size: 0.95em;
+		letter-spacing: 0.09em;
+		text-transform: uppercase;
+	}
+
+	.strip strong {
+		color: var(--board-text);
+		font-size: 1.15em;
+		font-weight: 700;
+		letter-spacing: 0.03em;
 	}
 
 	.timestamp {

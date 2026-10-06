@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
 	import type { TransitionConfig } from 'svelte/transition';
 	import { isTauri } from '@tauri-apps/api/core';
 	import BoardPostTile from '$lib/components/board-post-tile.svelte';
 	import { liveBoard, pageSize, recordEntryAired, type BoardRecord } from '$lib/repository/boards';
 	import { DEFAULT_BOARD_THEME, type BoardTheme } from '$lib/database/schema';
+	import { EXIT_DURATION_RATIO, STAGGER_MS, easeIn, easeOut, frameUnit } from '$lib/board/motion';
 
 	/**
 	 * How often the board window re-reads the live board.
@@ -108,11 +108,38 @@
 		return () => clearInterval(timer);
 	});
 
-	/** Applies whichever transition the board is configured for. */
-	function pageTransition(node: Element, { duration }: { duration: number }): TransitionConfig {
-		if (record?.transition === 'fade') return fade(node, { duration });
-		if (record?.transition === 'slide') return fly(node, { duration, y: 32 });
-		return { duration: 0 };
+	/**
+	 * Opens one post the way the broadcast graphics open their glass: a leading
+	 * edge wipes the panel open from the left, with a strong ease-out. `slide`
+	 * also drifts the post in behind the edge. Neighbouring posts follow one
+	 * another, so a page builds across the wall rather than appearing at once.
+	 */
+	function openPost(node: Element, { index }: { index: number }): TransitionConfig {
+		const transition = record?.transition;
+		if (!transition || transition === 'none') return { duration: 0 };
+		const drift = transition === 'slide' ? 22 * frameUnit() : 0;
+		// The mask stands off the post on three sides so its shadow is not cut.
+		const bleed = 48 * frameUnit();
+		return {
+			delay: index * STAGGER_MS,
+			duration: record?.transitionDurationMs ?? 0,
+			easing: easeOut,
+			css: (_t, u) =>
+				`clip-path: inset(-${bleed}px ${u * 100}% -${bleed}px -${bleed}px);` +
+				`transform: translateX(${-drift * u}px);`
+		};
+	}
+
+	/** Takes the outgoing page away quickly, with an ease-in, under the next one opening. */
+	function closePage(node: Element): TransitionConfig {
+		const transition = record?.transition;
+		if (!transition || transition === 'none') return { duration: 0 };
+		const opacity = Number(getComputedStyle(node).opacity);
+		return {
+			duration: (record?.transitionDurationMs ?? 0) * EXIT_DURATION_RATIO,
+			easing: easeIn,
+			css: (t) => `opacity: ${t * opacity};`
+		};
 	}
 </script>
 
@@ -126,20 +153,14 @@
 	style:--board-surface={theme.surfaceColor}
 	style:--board-text={theme.textColor}
 	style:--board-accent={theme.accentColor}
-	style:--board-radius="{theme.cornerRadiusPx}px"
-	style:font-family="{theme.fontFamily}, system-ui, sans-serif"
-	style:font-size="{0.9 * theme.textScale}vw"
+	style:--board-radius="calc({theme.cornerRadiusPx} * var(--unit))"
+	style:font-family="{theme.fontFamily}, Zuume, system-ui, sans-serif"
+	style:font-size="{1.25 * theme.textScale}vw"
 >
 	{#if !record}
-		<div class="standby">
-			<div class="standby-mark">Tagboard</div>
-			<div class="standby-note">No board is on air.</div>
-		</div>
+		{@render standby('Tagboard', 'No board is on air')}
 	{:else if visibleEntries.length === 0}
-		<div class="standby">
-			<div class="standby-mark">{record.name}</div>
-			<div class="standby-note">This board has no posts yet.</div>
-		</div>
+		{@render standby(record.name, 'This board has no posts yet')}
 	{:else}
 		<div class="stage">
 			{#key pageIndex}
@@ -147,10 +168,12 @@
 					class="grid"
 					style:grid-template-columns="repeat({columnCount}, minmax(0, 1fr))"
 					style:grid-template-rows="repeat({rowCount}, minmax(0, 1fr))"
-					transition:pageTransition={{ duration: record.transitionDurationMs }}
+					out:closePage
 				>
-					{#each visibleEntries as entry (entry.id)}
-						<BoardPostTile record={entry.post} board={record} />
+					{#each visibleEntries as entry, index (entry.id)}
+						<div class="cell" in:openPost|global={{ index }}>
+							<BoardPostTile record={entry.post} board={record} />
+						</div>
 					{/each}
 				</div>
 			{/key}
@@ -158,7 +181,34 @@
 	{/if}
 </main>
 
+{#snippet standby(title: string, note: string)}
+	<div class="standby">
+		<div class="standby-block">
+			<div class="standby-panel">{title}</div>
+			<div class="standby-strip">{note}</div>
+		</div>
+	</div>
+{/snippet}
+
 <style>
+	/*
+	 * The look is the broadcast package's basketball v2 language: tinted dark
+	 * glass, Zuume, a marker along the leading edge, 4-unit seams. Geometry is
+	 * measured in units of the 1920 × 1080 broadcast frame (`--unit`), so values
+	 * match the graphics' at any output resolution.
+	 */
+	@font-face {
+		font-family: 'Zuume';
+		font-weight: 400;
+		src: url('/fonts/Zuume-Regular.ttf') format('truetype');
+	}
+
+	@font-face {
+		font-family: 'Zuume';
+		font-weight: 700;
+		src: url('/fonts/Zuume-Bold.ttf') format('truetype');
+	}
+
 	:global(html),
 	:global(body) {
 		overflow: hidden;
@@ -166,12 +216,17 @@
 	}
 
 	.board {
+		--unit: calc(100vw / 1920);
 		width: 100vw;
 		height: 100vh;
 		box-sizing: border-box;
-		padding: 1.2em;
+		/* The broadcast frame's action-safe margin, less a little: a wall has no
+		   overscan to protect against. */
+		padding: calc(64 * var(--unit));
 		background: var(--board-background);
 		color: var(--board-text);
+		font-weight: 400;
+		-webkit-font-smoothing: antialiased;
 	}
 
 	.stage {
@@ -191,30 +246,74 @@
 	.grid {
 		position: absolute;
 		display: grid;
-		/* Each post is drawn at the top of its cell at its own height rather than
-		   stretched to fill the row. */
-		align-items: start;
-		gap: 1em;
+		gap: calc(24 * var(--unit));
 		inset: 0;
+	}
+
+	/* Each post is drawn at the top of its cell at its own height rather than
+	   stretched to fill the row; the cell is only a ceiling. */
+	.cell {
+		display: flex;
+		min-height: 0;
+		flex-direction: column;
 	}
 
 	.standby {
 		display: flex;
 		height: 100%;
-		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 0.5em;
 	}
 
-	.standby-mark {
-		font-size: 3em;
-		font-weight: 600;
-		letter-spacing: 0.02em;
+	.standby-block {
+		display: flex;
+		min-width: calc(640 * var(--unit));
+		flex-direction: column;
+		gap: calc(4 * var(--unit));
+		filter: drop-shadow(0 calc(4 * var(--unit)) calc(18 * var(--unit)) rgb(0 0 0 / 0.36));
 	}
 
-	.standby-note {
-		font-size: 1.1em;
-		opacity: 0.55;
+	.standby-panel,
+	.standby-strip {
+		position: relative;
+		overflow: hidden;
+		background:
+			linear-gradient(to bottom, transparent, rgb(0 0 0 / 0.3)),
+			color-mix(in srgb, var(--board-surface) 82%, transparent);
+		text-transform: uppercase;
+	}
+
+	.standby-panel {
+		padding: calc(28 * var(--unit)) calc(48 * var(--unit)) calc(20 * var(--unit))
+			calc(56 * var(--unit));
+		border-radius: var(--board-radius) var(--board-radius) calc(3 * var(--unit))
+			calc(3 * var(--unit));
+		font-size: 5em;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+		line-height: 1;
+	}
+
+	.standby-panel::after {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: calc(8 * var(--unit));
+		background: var(--board-accent);
+		content: '';
+	}
+
+	.standby-strip {
+		padding: calc(10 * var(--unit)) calc(48 * var(--unit)) calc(10 * var(--unit))
+			calc(56 * var(--unit));
+		border-radius: calc(3 * var(--unit)) calc(3 * var(--unit)) var(--board-radius)
+			var(--board-radius);
+		background:
+			linear-gradient(to bottom, transparent, rgb(0 0 0 / 0.3)),
+			color-mix(in srgb, var(--board-surface) 88%, transparent);
+		color: color-mix(in srgb, var(--board-text) 65%, transparent);
+		font-size: 1.2em;
+		letter-spacing: 0.09em;
 	}
 </style>
