@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
-	import { isTauri } from '@tauri-apps/api/core';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -14,6 +13,8 @@
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { NonIdealState } from '$lib/components/ui/non-ideal-state/index.js';
 	import { formatHandle } from '$lib/ingestion/permalink';
+	import { describeError } from '$lib/utils';
+	import type { BoardEntryRecord, BoardRecord } from '$lib/database/records';
 	import {
 		listEntries,
 		removeEntry,
@@ -21,9 +22,8 @@
 		requireBoard,
 		setEntryPinned,
 		updateBoard,
-		type BoardEntryRecord,
-		type BoardRecord
-	} from '$lib/repository/boards';
+		type BoardPatch
+	} from '$lib/remote/boards.remote';
 	import { BOARD_LAYOUTS, BOARD_TRANSITIONS } from '$lib/database/schema';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
@@ -31,26 +31,20 @@
 	import PinIcon from '@lucide/svelte/icons/pin';
 	import XIcon from '@lucide/svelte/icons/x';
 	import LayoutGridIcon from '@lucide/svelte/icons/layout-grid';
-	import MonitorOffIcon from '@lucide/svelte/icons/monitor-off';
 
 	const boardId = $derived(page.params.boardId!);
 
 	let record = $state<BoardRecord | null>(null);
 	let entries = $state<BoardEntryRecord[]>([]);
 	let loading = $state(true);
-	const insideTauri = isTauri();
 
 	async function refresh() {
-		if (!insideTauri) {
-			loading = false;
-			return;
-		}
 		loading = true;
 		try {
 			record = await requireBoard(boardId);
 			entries = record.entries;
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : String(error));
+			toast.error(describeError(error));
 		} finally {
 			loading = false;
 		}
@@ -59,14 +53,32 @@
 	onMount(refresh);
 
 	/** Writes one field through to the board row and reloads the local copy. */
-	async function patch<K extends keyof BoardRecord>(key: K, value: BoardRecord[K]) {
+	async function patch<K extends keyof BoardPatch>(key: K, value: BoardPatch[K]) {
 		if (!record) return;
-		await updateBoard(record.id, { [key]: value });
+		try {
+			await updateBoard({ boardId: record.id, patch: { [key]: value } });
+		} catch (error) {
+			toast.error(describeError(error));
+		}
 		await refresh();
 	}
 
+	/** Runs a change to the running order, then reloads it whether or not the change succeeded. */
+	async function changeEntries(action: () => Promise<unknown>) {
+		try {
+			await action();
+		} catch (error) {
+			toast.error(describeError(error));
+		}
+		try {
+			entries = await listEntries(boardId);
+		} catch (error) {
+			toast.error(describeError(error));
+		}
+	}
+
 	/** Moves an entry one slot in the given direction and persists the new order. */
-	async function move(entry: BoardEntryRecord, offset: -1 | 1) {
+	function move(entry: BoardEntryRecord, offset: -1 | 1) {
 		const index = entries.findIndex((item) => item.id === entry.id);
 		const target = index + offset;
 		if (index < 0 || target < 0 || target >= entries.length) return;
@@ -75,18 +87,15 @@
 		[reordered[index], reordered[target]] = [reordered[target], reordered[index]];
 		entries = reordered;
 
-		await reorderEntries(reordered.map((item) => item.id));
-		entries = await listEntries(boardId);
+		return changeEntries(() => reorderEntries(reordered.map((item) => item.id)));
 	}
 
-	async function remove(entry: BoardEntryRecord) {
-		await removeEntry(entry.id);
-		entries = await listEntries(boardId);
+	function remove(entry: BoardEntryRecord) {
+		return changeEntries(() => removeEntry(entry.id));
 	}
 
-	async function togglePin(entry: BoardEntryRecord) {
-		await setEntryPinned(entry.id, !entry.pinned);
-		entries = await listEntries(boardId);
+	function togglePin(entry: BoardEntryRecord) {
+		return changeEntries(() => setEntryPinned({ entryId: entry.id, pinned: !entry.pinned }));
 	}
 </script>
 
@@ -96,13 +105,7 @@
 		All boards
 	</Button>
 
-	{#if !insideTauri}
-		<NonIdealState
-			icon={MonitorOffIcon}
-			title="Running outside the desktop application"
-			description="The database and media cache live in the Tauri runtime. Start the control panel with `bun run tauri:dev`."
-		/>
-	{:else if loading}
+	{#if loading}
 		<div class="flex justify-center p-12"><Spinner /></div>
 	{:else if !record}
 		<NonIdealState icon={LayoutGridIcon} title="That board no longer exists" />
@@ -134,7 +137,7 @@
 					<Select.Root
 						type="single"
 						value={record.layout}
-						onValueChange={(value) => patch('layout', value as BoardRecord['layout'])}
+						onValueChange={(value) => patch('layout', value as BoardPatch['layout'])}
 					>
 						<Select.Trigger id="board-layout">{record.layout}</Select.Trigger>
 						<Select.Content>
@@ -192,7 +195,7 @@
 					<Select.Root
 						type="single"
 						value={record.transition}
-						onValueChange={(value) => patch('transition', value as BoardRecord['transition'])}
+						onValueChange={(value) => patch('transition', value as BoardPatch['transition'])}
 					>
 						<Select.Trigger id="board-transition">{record.transition}</Select.Trigger>
 						<Select.Content>

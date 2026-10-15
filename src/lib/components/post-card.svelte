@@ -6,7 +6,7 @@
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import MediaThumbnail from '$lib/components/media-thumbnail.svelte';
 	import { formatHandle } from '$lib/ingestion/permalink';
-	import { attachmentsOf, avatarOf, type PostRecord } from '$lib/repository/posts';
+	import { attachmentsOf, avatarOf, type PostRecord } from '$lib/database/records';
 	import type { Platform, ReviewState } from '$lib/database/schema';
 	import BadgeCheckIcon from '@lucide/svelte/icons/badge-check';
 	import HeartIcon from '@lucide/svelte/icons/heart';

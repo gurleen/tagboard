@@ -6,7 +6,7 @@ Conventions across every table:
 
 - Primary keys are text, filled with `crypto.randomUUID()` on insert.
 - `created_at` and `updated_at` are millisecond timestamps; `updated_at` is rewritten on every
-  update by Drizzle, and the board window uses it to detect changes worth re-rendering.
+  update by Drizzle, and the output uses it to detect changes worth re-rendering.
 - Enumerated columns are plain text constrained in TypeScript, not SQL check constraints, so a new
   value does not require a migration.
 - Column names are snake_case; the Drizzle client is configured with `casing: 'snake_case'`, so the
@@ -50,15 +50,15 @@ An avatar or attachment belonging to a post. Cascades on post deletion.
 | `kind`                           | `image`, `animation`, `video`                |
 | `position`                       | Display order among a post's attachments     |
 | `source_url`                     | Where it came from                           |
-| `cached_path`                    | Path relative to the media cache directory   |
+| `cached_path`                    | Object key in the `MEDIA` R2 bucket          |
 | `cache_state`                    | `pending`, `downloading`, `cached`, `failed` |
 | `cache_error`                    | Why a download failed, shown in the panel    |
 | `byte_length`, `content_type`    | Recorded from the response                   |
 | `width`, `height`, `duration_ms` | Intrinsic dimensions, when known             |
 | `description`                    | Alt text                                     |
 
-The cached file is named after the media row's own identifier, so re-fetching overwrites in place
-and a deleted row's file can be found without a reverse lookup on the URL.
+The stored object is keyed by the media row's own identifier, so re-fetching overwrites in place
+and a deleted row's object can be found without a reverse lookup on the URL.
 
 ## `board`
 
@@ -75,7 +75,7 @@ One video wall output: a grid shape, a rotation speed, and a look.
 | `is_live`                                                        | false                 |
 
 `theme` is a JSON column holding a `BoardTheme`: background, surface, text and accent colours, a
-font family, a text scale and a corner radius. The board window turns these into CSS custom
+font family, a text scale and a corner radius. The output turns these into CSS custom
 properties, so the wall's look is data rather than code.
 
 At most one board has `is_live` set. `setLiveBoard` clears and sets in one transaction to keep it
@@ -85,11 +85,11 @@ that way.
 
 A post's place on a board. Cascades from both sides.
 
-| Column                       | Purpose                                                  |
-| ---------------------------- | -------------------------------------------------------- |
-| `position`                   | Running order                                            |
-| `pinned`                     | Holds a cell on every page instead of rotating out       |
-| `last_aired_at`, `air_count` | Written by the board window each time the entry is shown |
+| Column                       | Purpose                                            |
+| ---------------------------- | -------------------------------------------------- |
+| `position`                   | Running order                                      |
+| `pinned`                     | Holds a cell on every page instead of rotating out |
+| `last_aired_at`, `air_count` | Written by an output each time the entry is shown  |
 
 `unique(board_id, post_id)` — a post appears on a board once. Only approved posts can be added;
 `addPostsToBoard` refuses the rest, so nothing reaches air without a verdict.
@@ -97,3 +97,11 @@ A post's place on a board. Cascades from both sides.
 ## `setting`
 
 A key–value table with a JSON value, for panel preferences that do not deserve a column.
+
+| Key          | Value                                                                  |
+| ------------ | ---------------------------------------------------------------------- |
+| `output_key` | The secret every output URL carries; generated on first use, see below |
+
+`output_key` is what guards `/output/…`, which OBS loads and which cannot sit behind Cloudflare
+Access. It is 192 random bits, compared in constant time, and regenerated from Settings to revoke
+every output URL issued before.

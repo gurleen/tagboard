@@ -1,6 +1,5 @@
-import { isTauri } from '@tauri-apps/api/core';
 import type { ReviewState } from '$lib/database/schema';
-import { countByReviewState, pendingMediaCount } from '$lib/repository/posts';
+import { countByReviewState, pendingMediaCount } from '$lib/remote/posts.remote';
 
 /**
  * Review counts shared by the sidebar badge and the queue page.
@@ -28,9 +27,8 @@ class QueueCounts {
 		return this.counts.approved;
 	}
 
-	/** Re-reads the counts. Outside the Tauri runtime there is no database to read. */
+	/** Re-reads the counts. */
 	async refresh(): Promise<void> {
-		if (!isTauri()) return;
 		this.counts = await countByReviewState();
 		this.cachingCount = await pendingMediaCount();
 	}

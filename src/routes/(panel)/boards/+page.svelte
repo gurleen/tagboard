@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
-	import { isTauri } from '@tauri-apps/api/core';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -9,61 +9,82 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { NonIdealState } from '$lib/components/ui/non-ideal-state/index.js';
-	import BoardOutputControls from '$lib/components/board-output-controls.svelte';
-	import {
-		createBoard,
-		deleteBoard,
-		listBoards,
-		pageSize,
-		setLiveBoard
-	} from '$lib/repository/boards';
+	import BoardOutputCard from '$lib/components/board-output-card.svelte';
+	import { outputUrl } from '$lib/board/output';
+	import { pageSize } from '$lib/database/records';
 	import type { Board } from '$lib/database/schema';
+	import { copyToClipboard, describeError } from '$lib/utils';
+	import { createBoard, deleteBoard, listBoards, setLiveBoard } from '$lib/remote/boards.remote';
+	import { outputKey as readOutputKey } from '$lib/remote/settings.remote';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import LayoutGridIcon from '@lucide/svelte/icons/layout-grid';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import RadioIcon from '@lucide/svelte/icons/radio';
-	import MonitorOffIcon from '@lucide/svelte/icons/monitor-off';
+	import CopyIcon from '@lucide/svelte/icons/copy';
 
 	let boards = $state<Board[]>([]);
 	let loading = $state(true);
 	let newBoardName = $state('');
-	const insideTauri = isTauri();
+	let outputKey = $state<string | null>(null);
 
 	async function refresh() {
-		if (!insideTauri) {
-			loading = false;
-			return;
-		}
 		loading = true;
 		try {
 			boards = await listBoards();
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : String(error));
+			toast.error(describeError(error));
 		} finally {
 			loading = false;
 		}
 	}
 
-	onMount(refresh);
+	onMount(() => {
+		refresh();
+		readOutputKey().then(
+			(key) => (outputKey = key),
+			(error) => toast.error(describeError(error))
+		);
+	});
 
-	async function create() {
+	/** Runs a change, reports a failure to the operator, and reloads the boards either way. */
+	async function change(action: () => Promise<unknown>) {
+		try {
+			await action();
+		} catch (error) {
+			toast.error(describeError(error));
+		}
+		await refresh();
+	}
+
+	function create() {
 		if (!newBoardName.trim()) return;
-		const board = await createBoard(newBoardName);
-		newBoardName = '';
-		toast.success(`Created “${board.name}”.`);
-		await refresh();
+		return change(async () => {
+			const board = await createBoard(newBoardName);
+			newBoardName = '';
+			toast.success(`Created “${board.name}”.`);
+		});
 	}
 
-	async function goLive(board: Board) {
-		await setLiveBoard(board.isLive ? null : board.id);
-		toast.success(board.isLive ? 'Board taken off air.' : `“${board.name}” is on air.`);
-		await refresh();
+	function goLive(board: Board) {
+		return change(async () => {
+			await setLiveBoard(board.isLive ? null : board.id);
+			toast.success(board.isLive ? 'Board taken off air.' : `“${board.name}” is on air.`);
+		});
 	}
 
-	async function remove(board: Board) {
-		await deleteBoard(board.id);
-		toast.info('Board deleted. Its posts stay in the library.');
-		await refresh();
+	function remove(board: Board) {
+		return change(async () => {
+			await deleteBoard(board.id);
+			toast.info('Board deleted. Its posts stay in the library.');
+		});
+	}
+
+	function copyBoardOutputUrl(board: Board) {
+		if (!outputKey) return;
+		return copyToClipboard(
+			outputUrl(page.url.origin, board.id, outputKey),
+			`Output URL for “${board.name}”`
+		);
 	}
 </script>
 
@@ -72,27 +93,21 @@
 		<Text class="text-xl font-semibold sm:text-2xl">Boards</Text>
 		<Text class="text-sm text-muted-foreground">
 			Each board is one video wall output: a grid shape, a rotation speed and a look. One board is
-			on air at a time.
+			on air at a time, and every board can also be shown on its own output URL.
 		</Text>
 	</div>
 
-	<BoardOutputControls />
+	<BoardOutputCard {outputKey} />
 
 	<div class="flex items-center gap-2">
 		<Input class="w-64" placeholder="New board name" bind:value={newBoardName} />
-		<Button onclick={create} disabled={!insideTauri || !newBoardName.trim()}>
+		<Button onclick={create} disabled={!newBoardName.trim()}>
 			<PlusIcon />
 			Create board
 		</Button>
 	</div>
 
-	{#if !insideTauri}
-		<NonIdealState
-			icon={MonitorOffIcon}
-			title="Running outside the desktop application"
-			description="The database and media cache live in the Tauri runtime. Start the control panel with `bun run tauri:dev`."
-		/>
-	{:else if loading}
+	{#if loading}
 		<div class="flex justify-center p-12"><Spinner /></div>
 	{:else if boards.length === 0}
 		<NonIdealState
@@ -131,6 +146,15 @@
 						>
 							<RadioIcon />
 							{board.isLive ? 'Take off air' : 'Put on air'}
+						</Button>
+						<Button
+							variant="ghost"
+							size="sm"
+							onclick={() => copyBoardOutputUrl(board)}
+							disabled={!outputKey}
+						>
+							<CopyIcon />
+							Output URL
 						</Button>
 						<Button variant="ghost" size="sm" class="ml-auto" onclick={() => remove(board)}>
 							<Trash2Icon />

@@ -122,9 +122,8 @@ export type CacheState = (typeof CACHE_STATES)[number];
 /**
  * An image or video belonging to a post, mirrored into the local media cache.
  *
- * `cachedPath` is relative to the cache directory the Rust side owns; it is
- * resolved to an absolute path and passed through Tauri's asset protocol at
- * render time. Nothing on the board window loads from `sourceUrl` — CDN links
+ * `cachedPath` is the object's key in the `MEDIA` R2 bucket, served at
+ * `/media/{cachedPath}`. Nothing on the output loads from `sourceUrl` — CDN links
  * expire and their latency is not acceptable on air.
  */
 export const media = sqliteTable(
@@ -162,7 +161,7 @@ export const media = sqliteTable(
 	]
 );
 
-/** Arrangement the board window renders. */
+/** Arrangement the output renders. */
 export const BOARD_LAYOUTS = ['grid', 'carousel', 'single'] as const;
 export type BoardLayout = (typeof BOARD_LAYOUTS)[number];
 
@@ -225,7 +224,7 @@ export const board = sqliteTable(
 			.notNull()
 			.$defaultFn(() => DEFAULT_BOARD_THEME),
 
-		/** True on the one board the board window is currently rendering. */
+		/** True on the one board the on-air output is currently rendering. */
 		isLive: integer('is_live', { mode: 'boolean' }).notNull().default(false),
 
 		createdAt: createdAt(),
@@ -256,7 +255,7 @@ export const boardEntry = sqliteTable(
 		/** Pinned entries hold a cell instead of rotating out. */
 		pinned: integer('pinned', { mode: 'boolean' }).notNull().default(false),
 
-		/** Last time the board window displayed this entry, for rotation fairness. */
+		/** Last time an output displayed this entry, for rotation fairness. */
 		lastAiredAt: integer('last_aired_at', { mode: 'timestamp_ms' }),
 		airCount: integer('air_count').notNull().default(0),
 

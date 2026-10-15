@@ -1,23 +1,10 @@
 import tailwindcss from '@tailwindcss/vite';
-import adapter from '@sveltejs/adapter-static';
+import adapter from '@sveltejs/adapter-cloudflare';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
-// Tauri sets these when it starts the dev server; they let the config target the
-// platform being built rather than the machine doing the building.
-const host = process.env.TAURI_DEV_HOST;
-
 export default defineConfig({
-	// Tauri loads the dev server at a fixed URL, so the port must not drift.
-	clearScreen: false,
 	server: {
-		host: host || false,
-		port: 5173,
-		strictPort: true,
-		hmr: host ? { protocol: 'ws', host, port: 5183 } : undefined,
-		// The Rust crate is compiled by cargo, not bundled by Vite; watching it
-		// only produces spurious reloads.
-		watch: { ignored: ['**/src-tauri/**'] },
 		allowedHosts: ['5173-mbp.gurleen.net']
 	},
 	plugins: [
@@ -29,9 +16,16 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// Tauri serves the front end from the file system, so the whole app is
-			// prerendered to static files with an SPA fallback for client routing.
-			adapter: adapter({ fallback: 'index.html' }),
+			// Builds one Cloudflare Worker that serves the client assets and runs every
+			// server route. `vite dev` reaches the D1 and R2 bindings declared in
+			// `wrangler.jsonc` through Wrangler's local platform proxy.
+			adapter: adapter(),
+
+			experimental: {
+				// The control panel reaches the server through `command` functions in
+				// `src/lib/remote/`. See `docs/architecture.md`.
+				remoteFunctions: true
+			},
 
 			typescript: {
 				config: (config) => {

@@ -1,7 +1,8 @@
 # Working in this repository
 
-Tagboard is a Tauri desktop application: a SvelteKit control panel for collecting and reviewing
-social media posts, plus a second window that rotates approved posts across a grid on a video wall.
+Tagboard is a SvelteKit application deployed as one Cloudflare Worker: a control panel for
+collecting and reviewing social media posts, and output pages, loaded into OBS or onto a video wall,
+that rotate approved posts across a grid.
 
 Read [`docs/architecture.md`](docs/architecture.md) before changing anything structural, and
 [`docs/data-model.md`](docs/data-model.md) before touching the schema.
@@ -11,10 +12,11 @@ Read [`docs/architecture.md`](docs/architecture.md) before changing anything str
 - **Bun** for everything: `bun install`, `bun run <script>`, `bun test`. Never npm, yarn or pnpm.
 - **Svelte 5 runes.** `$state`, `$derived`, `$props`, `$effect`. Runes are forced on for sources
   outside `node_modules`; the older store and `export let` idioms will not compile.
-- **SvelteKit as a single-page application.** `ssr = false`, `prerender = false`, static adapter
-  with an `index.html` fallback. There is no server: do not add `+page.server.ts`, `+layout.server.ts`
-  or anything under `$lib/server`.
+- **SvelteKit on `@sveltejs/adapter-cloudflare`.** `ssr = false` and `prerender = false` in the root
+  layout: pages render in the browser, and server code runs in the Worker. The adapter is pinned to
+  the major version that supports SvelteKit 2; version 8 requires SvelteKit 3.
 - SvelteKit's configuration is **inline in `vite.config.ts`**. There is no `svelte.config.js`.
+- **Wrangler** owns the Worker configuration (`wrangler.jsonc`), D1 migrations and deployment.
 
 ## Naming
 
@@ -27,32 +29,39 @@ drizzle-kit otherwise invents a random name, and migration filenames determine a
 
 ## Layering
 
-Pages do not query. Every query lives in `src/lib/repository/`, grouped by subject, and pages call
-those functions. Bindings to Rust commands live beside the concern they serve — `lib/media`,
-`lib/board`, `lib/database` — and are thin: one function per command, no logic.
+Pages do not query. Every query lives in `src/lib/server/repository/`, grouped by subject, and pages
+call those functions through the remote commands in `src/lib/remote/` — one `command` per repository
+function, validating its argument with valibot and doing nothing else. Reads are commands too, not
+`query` functions; `docs/architecture.md` explains why.
+
+Code that must never reach the browser — repositories, fetchers, storage, the database client —
+lives under `src/lib/server/`. Shapes and pure helpers both sides need live outside it:
+`$lib/database/records.ts`, `$lib/ingestion/permalink.ts`, `$lib/media/asset.ts`,
+`$lib/board/output.ts`.
 
 Repositories read entities and their children with separate queries and group in memory rather than
-joining. This is deliberate; see the note on `attachMediaToAll` in `src/lib/repository/posts.ts`.
+joining. This is deliberate; see the note on `attachMediaToAll` in
+`src/lib/server/repository/posts.ts`.
 
 ## Working with the database
 
 - The schema is declared once, in `src/lib/database/schema.ts`. Change it there, then generate a
   migration. Never hand-edit a file in `drizzle/`.
-- `drizzle/` is compiled into the Rust binary with `include_dir!`, so it must exist before
-  `cargo build` and must be committed.
-- `db:push` and `db:migrate` are not wired to the application database on purpose. They would
-  operate on a different file from the one the application opens. See `drizzle.config.ts`.
-- Anything that must be atomic goes through `database.batch()`, which is one transaction on the
-  Rust side.
+- Wrangler applies `drizzle/` to D1: `bun run db:migrate:local`, then `bun run db:migrate:remote`
+  before deploying a schema change. drizzle-kit's own `push` and `migrate` are not wired up.
+- Anything that must be atomic goes through `database().batch()`, which is one transaction on D1.
+- D1 refuses a statement with more than 100 bound parameters. Bind identifier lists through
+  `identifierBatches`, and insert rows one statement apiece in a batch rather than in one multi-row
+  insert.
 
-## Working with the Rust side
+## Working with the Worker
 
-- `src-tauri/src/` is organised by concern: `database`, `media`, `board`, `error`. A new command
-  goes in the matching module and must be added to `invoke_handler` in `lib.rs`.
-- Errors return `crate::error::Result`; the `Error` enum serialises as its `Display` text, which is
-  what the front end shows.
-- Enabling a Tauri feature in `tauri.conf.json` requires the matching cargo feature on the `tauri`
-  dependency, or the build script fails with an allowlist mismatch.
+- Bindings are declared in `wrangler.jsonc` and typed in `App.Platform` in `src/app.d.ts`. Server
+  code reads them with `bindings()` from `$lib/server/environment`.
+- The `nodejs_als` compatibility flag is what lets `getRequestEvent()` find the bindings after an
+  `await`. Do not remove it.
+- `/output` and `/media` are public, guarded by the output key rather than Cloudflare Access. Anything
+  added under them is reachable by anyone who has an output URL.
 
 ## Interface
 
@@ -61,11 +70,10 @@ The panel follows the Palantir Blueprint style, implemented over shadcn-svelte. 
 it, and read a component's source before using a prop — the variant and size vocabularies are
 specific to this library.
 
-Every page that reads the database must handle running outside the Tauri runtime, where the
-database does not exist. The established pattern is a `NonIdealState` explaining that the desktop
-application is required.
+A failed command rejects with SvelteKit's `HttpError`, which is not an `Error`. Show it to the
+operator with `describeError` from `$lib/utils`.
 
-The board window's styling is intentionally plain CSS driven by custom properties from the board's
+The output's styling is intentionally plain CSS driven by custom properties from the board's
 `theme`, not Tailwind utilities. It is a different medium — a wall seen from across a room — and its
 look is data the operator edits, not classes in the source.
 
@@ -74,7 +82,7 @@ look is data the operator edits, not classes in the source.
 ```sh
 bun run check      # svelte-check; must be clean
 bun run format
-cd src-tauri && cargo check
+bun run build      # must succeed; it is what Wrangler deploys
 ```
 
 `bun run lint` reports pre-existing errors in the vendored `src/lib/components/ui/**` components and
