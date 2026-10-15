@@ -34,8 +34,8 @@ interface PostFetcher {
 
 Fetchers are registered per platform, and the pipeline picks one by platform rather than branching
 on platform itself. X is served by `XSyndicationFetcher`, Instagram by `InstagramEmbedFetcher`;
-neither needs a credential, so both report `isConfigured()` as true wherever the Tauri runtime is
-present, and false in a plain browser, where the Rust command they depend on does not exist. A
+neither needs a credential, so both report `isConfigured()` as true. Both run in the Worker, under
+`src/lib/server/ingestion/`, and the panel reaches them through the post repository. A
 platform with no fetcher at all raises `FetcherUnavailableError`, and a fetcher whose provider is
 not available raises `FetcherNotConfiguredError` with an explanation the panel shows the operator.
 Both classes, and `PostUnavailableError`, live in `src/lib/ingestion/errors.ts` rather than beside
@@ -59,7 +59,7 @@ frame pointed at a permalink never renders. The one frame X does permit,
 `platform.twitter.com/embed/Tweet.html`, is cross-origin, so the same-origin policy would leave a
 post visible but unreadable to script.
 
-The request is issued from `src-tauri/src/syndication.rs` rather than from the web view, because
+The request is issued by the Worker rather than from the browser, because
 the endpoint's `Access-Control-Allow-Origin` names `https://platform.twitter.com` alone. The `token`
 parameter is derived from the id the way the widget derives it; the endpoint does not presently
 validate it.
@@ -101,21 +101,27 @@ That one header is the whole of the difference. `Sec-Fetch-Dest`, `Sec-Fetch-Sit
 `Accept`, and the widget's own `?cr=1&v=14&wp=…&rd=…` query parameters were each tested and none of
 them changes which form arrives.
 
-This is why the request is issued from `src-tauri/src/instagram.rs` rather than from the web view:
+This is why the request is issued by the Worker rather than from the browser:
 `Sec-` headers are forbidden header names, written by the browser itself, and script is not
 permitted to set them. Loading the endpoint in a frame instead would satisfy the header — a frame
 navigation carries it natively — but leave the document cross-origin and so unreadable to script,
-exactly as on X. Rust also sends a browser user agent, because an absent one is the kind of signal
+exactly as on X. The Workers runtime has no forbidden header names, so it can send the header. It
+also sends a browser user agent, because an absent one is the kind of signal
 an edge tier rejects, and `Accept-Language: en-US,en;q=0.9`, because the like count reaches the
 caller only as rendered text (`409,463 likes`) and the parser that reads it expects English
-grouping. The Rust side validates the shortcode against `[A-Za-z0-9_-]{1,64}` and hands the
-document back unmodified.
+grouping. The fetcher validates the shortcode against `[A-Za-z0-9_-]{1,64}` before building the
+request URL.
+
+Instagram, like any platform, may treat requests from Cloudflare's address ranges differently from
+those of a residential connection. If the embed starts answering with the shell, or with errors,
+from the deployed Worker while it still works locally, that is the first thing to suspect.
 
 ### Parsing
 
 Instagram publishes no JSON blob in the embed any more — no `contextJSON`, no `shortcode_media`, no
-`gql_data`, no `__additionalData` — so unlike X, the mapping layer parses markup. `DOMParser` does
-the reading, which is safe because the app is a `ssr = false` SPA and a DOM always exists. The
+`gql_data`, no `__additionalData` — so unlike X, the mapping layer parses markup. A Worker has no
+`DOMParser`, so [linkedom](https://github.com/WebReflection/linkedom), which implements the same
+interface in plain JavaScript, does the reading. The
 `.Embed` root carries `data-media-id`, `data-media-type`, `data-owner-id` and `data-permalink`;
 those four assertions are what goes into `raw`, since the document itself is a quarter of a
 megabyte of page furniture and is not worth a column.
@@ -152,6 +158,5 @@ behaviour above especially. The `PostFetcher` interface confines that risk to th
 ## Where credentials would go
 
 Neither implemented path needs any. If a provider that does need them is ever added, they belong in
-the Rust side rather than in the web view, and the request should be made from Rust for the same
-reason both current requests already are: a token in the front end is readable by anything running
-in the web view, and `reqwest` is already there.
+a Worker secret (`wrangler secret put`, with a `.dev.vars` file for local development), read from
+`platform.env` on the server, and never sent to the browser.

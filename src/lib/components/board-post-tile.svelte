@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { assetUrl, resolveAsset } from '$lib/media/cache';
+	import { assetUrl, playsAsVideo } from '$lib/media/asset';
 	import PlatformGlyph from '$lib/components/platform-glyph.svelte';
-	import { attachmentsOf, avatarOf, type PostRecord } from '$lib/repository/posts';
+	import { attachmentsOf, avatarOf, type PostRecord } from '$lib/database/records';
 	import { formatHandle } from '$lib/ingestion/permalink';
-	import type { Board, Media } from '$lib/database/schema';
+	import type { Board } from '$lib/database/schema';
 
 	let { record, board }: { record: PostRecord; board: Board } = $props();
 
@@ -12,18 +12,15 @@
 	const attachment = $derived(attachments[0]);
 
 	/**
-	 * The board window renders cached files only. An asset that never downloaded
-	 * is left out rather than fetched at air time, so the wall never waits on the
-	 * network.
+	 * The output renders cached copies only. An asset that never downloaded is left
+	 * out rather than fetched from the platform's CDN at air time.
 	 */
-	async function cachedUrl(asset: Media | undefined): Promise<string | null> {
-		if (!asset || asset.cacheState !== 'cached' || !asset.cachedPath) return null;
-		const absolute = await resolveAsset(asset.cachedPath);
-		return absolute ? assetUrl(absolute) : null;
-	}
+	const avatarUrl = $derived(assetUrl(avatar));
+	const attachmentUrl = $derived(assetUrl(attachment));
 
-	const avatarUrl = $derived(cachedUrl(avatar));
-	const attachmentUrl = $derived(cachedUrl(attachment));
+	/** Set when a cached copy fails to load, so the tile falls back rather than showing a broken image. */
+	let avatarFailed = $state(false);
+	let attachmentFailed = $state(false);
 
 	const timestamp = $derived(
 		record.postedAt
@@ -43,13 +40,11 @@
 
 <article class="tile">
 	<header class="identity">
-		{#await avatarUrl then url}
-			{#if url}
-				<img class="avatar" src={url} alt="" />
-			{:else}
-				<div class="avatar initial">{record.authorName.charAt(0).toUpperCase()}</div>
-			{/if}
-		{/await}
+		{#if avatarUrl && !avatarFailed}
+			<img class="avatar" src={avatarUrl} alt="" onerror={() => (avatarFailed = true)} />
+		{:else}
+			<div class="avatar initial">{record.authorName.charAt(0).toUpperCase()}</div>
+		{/if}
 		<div class="names">
 			<div class="name">{record.authorName}</div>
 			{#if record.authorHandle}
@@ -65,13 +60,26 @@
 		<p class="body">{record.body}</p>
 	{/if}
 
-	{#await attachmentUrl then url}
-		{#if url && attachment?.kind === 'video'}
-			<video class="attachment" src={url} autoplay muted loop playsinline></video>
-		{:else if url}
-			<img class="attachment" src={url} alt={attachment?.description ?? ''} />
+	{#if attachmentUrl && !attachmentFailed}
+		{#if attachment && playsAsVideo(attachment)}
+			<video
+				class="attachment"
+				src={attachmentUrl}
+				autoplay
+				muted
+				loop
+				playsinline
+				onerror={() => (attachmentFailed = true)}
+			></video>
+		{:else}
+			<img
+				class="attachment"
+				src={attachmentUrl}
+				alt={attachment?.description ?? ''}
+				onerror={() => (attachmentFailed = true)}
+			/>
 		{/if}
-	{/await}
+	{/if}
 
 	{#if board.showMetrics || (board.showTimestamp && timestamp)}
 		<footer class="meta">

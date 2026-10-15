@@ -1,23 +1,46 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
-	import { isTauri } from '@tauri-apps/api/core';
 	import * as Menubar from '$lib/components/ui/menubar/index.js';
-	import { closeBoardWindow, openBoardWindow, setBoardFullscreen } from '$lib/board/window';
-	import { setLiveBoard } from '$lib/repository/boards';
+	import { LIVE_OUTPUT_TARGET, outputUrl } from '$lib/board/output';
+	import { copyToClipboard, describeError } from '$lib/utils';
+	import { setLiveBoard } from '$lib/remote/boards.remote';
+	import { outputKey } from '$lib/remote/settings.remote';
 
-	/** Guards the board commands, which only exist inside the desktop runtime. */
-	async function inRuntime(action: () => Promise<unknown>) {
-		if (!isTauri()) {
-			toast.error('Board output is only available in the desktop application.');
-			return;
-		}
+	/** Runs an output command, reporting a failure to the operator. */
+	async function attempt(action: () => Promise<unknown>) {
 		try {
 			await action();
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : String(error));
+			toast.error(describeError(error));
 		}
+	}
+
+	async function liveOutputUrl(): Promise<string> {
+		return outputUrl(page.url.origin, LIVE_OUTPUT_TARGET, await outputKey());
+	}
+
+	function copyLiveOutputUrl() {
+		return attempt(async () => copyToClipboard(await liveOutputUrl(), 'On-air output URL'));
+	}
+
+	/**
+	 * Opens the on-air output in a new tab to preview it. The tab is opened before
+	 * the key is read, because a browser only allows a pop-up during the click.
+	 */
+	function openLiveOutput() {
+		const preview = window.open('', '_blank');
+		return attempt(async () => {
+			try {
+				const url = await liveOutputUrl();
+				if (preview) preview.location.href = url;
+			} catch (error) {
+				preview?.close();
+				throw error;
+			}
+		});
 	}
 </script>
 
@@ -35,17 +58,16 @@
 	<Menubar.Menu>
 		<Menubar.Trigger>Output</Menubar.Trigger>
 		<Menubar.Content>
-			<Menubar.Item onSelect={() => inRuntime(openBoardWindow)}>Open board window</Menubar.Item>
-			<Menubar.Item onSelect={() => inRuntime(closeBoardWindow)}>Close board window</Menubar.Item>
+			<Menubar.Item onSelect={copyLiveOutputUrl}>Copy on-air output URL</Menubar.Item>
+			<Menubar.Item onSelect={openLiveOutput}>Preview on-air output</Menubar.Item>
 			<Menubar.Separator />
-			<Menubar.Item onSelect={() => inRuntime(() => setBoardFullscreen(true))}>
-				Enter fullscreen
-			</Menubar.Item>
-			<Menubar.Item onSelect={() => inRuntime(() => setBoardFullscreen(false))}>
-				Leave fullscreen
-			</Menubar.Item>
-			<Menubar.Separator />
-			<Menubar.Item onSelect={() => inRuntime(() => setLiveBoard(null))}>
+			<Menubar.Item
+				onSelect={() =>
+					attempt(async () => {
+						await setLiveBoard(null);
+						toast.info('All boards taken off air.');
+					})}
+			>
 				Take all boards off air
 			</Menubar.Item>
 		</Menubar.Content>

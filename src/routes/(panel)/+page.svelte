@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { isTauri } from '@tauri-apps/api/core';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Text } from '$lib/components/ui/text/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
@@ -10,38 +9,34 @@
 	import AddPostDialog from '$lib/components/add-post-dialog.svelte';
 	import PostCard from '$lib/components/post-card.svelte';
 	import { queue } from '$lib/state/queue.svelte.js';
+	import { describeError } from '$lib/utils';
+	import type { PostRecord } from '$lib/database/records';
 	import {
 		cacheMediaForPost,
 		listPosts,
 		retryResolution,
 		setReviewState,
-		setStarred,
-		type PostRecord
-	} from '$lib/repository/posts';
+		setReviewStateForAll,
+		setStarred
+	} from '$lib/remote/posts.remote';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import XIcon from '@lucide/svelte/icons/x';
 	import StarIcon from '@lucide/svelte/icons/star';
 	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
-	import MonitorOffIcon from '@lucide/svelte/icons/monitor-off';
 
 	let records = $state<PostRecord[]>([]);
 	let loading = $state(true);
 	let dialogOpen = $state(false);
-	const insideTauri = isTauri();
 
 	async function refresh() {
-		if (!insideTauri) {
-			loading = false;
-			return;
-		}
 		loading = true;
 		try {
 			records = await listPosts({ reviewState: 'pending' });
 			await queue.refresh();
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : String(error));
+			toast.error(describeError(error));
 		} finally {
 			loading = false;
 		}
@@ -49,33 +44,48 @@
 
 	onMount(refresh);
 
-	async function approve(record: PostRecord) {
-		await setReviewState(record.id, 'approved');
-		toast.success('Approved.');
+	/** Runs a change, reports a failure to the operator, and reloads the queue either way. */
+	async function change(action: () => Promise<unknown>, success?: () => void) {
+		try {
+			await action();
+			success?.();
+		} catch (error) {
+			toast.error(describeError(error));
+		}
 		await refresh();
 	}
 
-	async function reject(record: PostRecord) {
-		await setReviewState(record.id, 'rejected');
-		toast.info('Rejected.');
-		await refresh();
+	function approve(record: PostRecord) {
+		return change(
+			() => setReviewState({ postId: record.id, reviewState: 'approved' }),
+			() => toast.success('Approved.')
+		);
 	}
 
-	async function approveAll() {
-		for (const record of records) await setReviewState(record.id, 'approved');
-		toast.success(`Approved ${records.length} posts.`);
-		await refresh();
+	function reject(record: PostRecord) {
+		return change(
+			() => setReviewState({ postId: record.id, reviewState: 'rejected' }),
+			() => toast.info('Rejected.')
+		);
 	}
 
-	async function toggleStar(record: PostRecord) {
-		await setStarred(record.id, !record.starred);
-		await refresh();
+	function approveAll() {
+		const postIds = records.map((record) => record.id);
+		return change(
+			() => setReviewStateForAll({ postIds, reviewState: 'approved' }),
+			() => toast.success(`Approved ${postIds.length} posts.`)
+		);
 	}
 
-	async function retry(record: PostRecord) {
-		await retryResolution(record.id);
-		await cacheMediaForPost(record.id);
-		await refresh();
+	function toggleStar(record: PostRecord) {
+		return change(() => setStarred({ postId: record.id, starred: !record.starred }));
+	}
+
+	function retry(record: PostRecord) {
+		return change(async () => {
+			await retryResolution(record.id);
+			await cacheMediaForPost(record.id);
+		});
 	}
 </script>
 
@@ -98,20 +108,14 @@
 			<Button variant="secondary" onclick={approveAll} disabled={records.length === 0}>
 				Approve all
 			</Button>
-			<Button onclick={() => (dialogOpen = true)} disabled={!insideTauri}>
+			<Button onclick={() => (dialogOpen = true)}>
 				<PlusIcon />
 				Add post
 			</Button>
 		</div>
 	</div>
 
-	{#if !insideTauri}
-		<NonIdealState
-			icon={MonitorOffIcon}
-			title="Running outside the desktop application"
-			description="The database and media cache live in the Tauri runtime. Start the control panel with `bun run tauri:dev`."
-		/>
-	{:else if loading}
+	{#if loading}
 		<div class="flex justify-center p-12"><Spinner /></div>
 	{:else if records.length === 0}
 		<NonIdealState

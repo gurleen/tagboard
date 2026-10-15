@@ -9,7 +9,8 @@
 	import { Switch } from '$lib/components/ui/switch/index.js';
 	import { Spinner } from '$lib/components/ui/spinner/index.js';
 	import { isSupportedPermalink } from '$lib/ingestion/permalink';
-	import { cacheMediaForPost, createManualPost, ingestPermalink } from '$lib/repository/posts';
+	import { describeError } from '$lib/utils';
+	import { cacheMediaForPost, createManualPost, ingestPermalink } from '$lib/remote/posts.remote';
 
 	let { open = $bindable(false), onadded }: { open?: boolean; onadded?: () => void } = $props();
 
@@ -62,7 +63,7 @@
 				else created += 1;
 				// Media downloads are slow and independent of the post record, so
 				// they run after the row is in place rather than blocking the dialog.
-				void cacheMediaForPost(outcome.post.id).then(() => onadded?.());
+				void cacheMediaForPost(outcome.post.id).then(() => onadded?.(), reportCachingFailure);
 			}
 
 			if (created > 0)
@@ -76,10 +77,15 @@
 			open = false;
 			onadded?.();
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : String(error));
+			toast.error(describeError(error));
 		} finally {
 			submitting = false;
 		}
+	}
+
+	/** Individual download failures are recorded on the media rows; this is the request itself failing. */
+	function reportCachingFailure(error: unknown) {
+		toast.error(`Media could not be cached: ${describeError(error)}`);
 	}
 
 	async function submitManual() {
@@ -95,14 +101,14 @@
 				avatarUrl: avatarUrl || null,
 				mediaUrls: mediaUrlText.split('\n')
 			});
-			void cacheMediaForPost(record.id).then(() => onadded?.());
+			void cacheMediaForPost(record.id).then(() => onadded?.(), reportCachingFailure);
 
 			toast.success('Post added for review.');
 			resetFields();
 			open = false;
 			onadded?.();
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : String(error));
+			toast.error(describeError(error));
 		} finally {
 			submitting = false;
 		}
@@ -142,8 +148,8 @@
 				{/if}
 
 				<p class="text-xs text-muted-foreground">
-					No retrieval provider is configured yet, so a pasted link is saved with its author handle
-					and marked as failed to resolve. The post can still be composed by hand on the other tab.
+					A link that cannot be retrieved is still saved, with its author handle, and marked as
+					failed so it can be retried. The post can also be composed by hand on the other tab.
 				</p>
 
 				<Dialog.Footer>
