@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { command } from '$app/server';
-import { BOARD_LAYOUTS, BOARD_TRANSITIONS } from '$lib/database/schema';
+import { BOARD_LAYOUTS, BOARD_TRANSITIONS, SUBMISSION_CODE_POSITIONS } from '$lib/database/schema';
 import * as boards from '$lib/server/repository/boards';
 
 /**
@@ -42,6 +42,7 @@ const boardPatch = v.partial(
 		showMetrics: v.boolean(),
 		showTimestamp: v.boolean(),
 		showPlatformBadge: v.boolean(),
+		submissionCodePosition: v.picklist(SUBMISSION_CODE_POSITIONS),
 		theme: boardTheme
 	})
 );

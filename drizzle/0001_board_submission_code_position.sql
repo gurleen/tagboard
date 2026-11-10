@@ -1,0 +1,1 @@
+ALTER TABLE `board` ADD `submission_code_position` text DEFAULT 'hidden' NOT NULL;

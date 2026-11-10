@@ -102,7 +102,9 @@
 			</div>
 
 			<div class="flex shrink-0 items-center gap-1.5">
-				<Badge variant="outline">{PLATFORM_LABELS[record.platform]}</Badge>
+				<Badge variant="outline">
+					{record.origin === 'upload' ? 'Submitted' : PLATFORM_LABELS[record.platform]}
+				</Badge>
 				<Badge variant={REVIEW_VARIANTS[record.reviewState]}>{record.reviewState}</Badge>
 			</div>
 		</div>

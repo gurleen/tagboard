@@ -13,7 +13,7 @@ import {
 import type { PostRecord } from '$lib/database/records';
 import { normaliseHandle, parsePermalink } from '$lib/ingestion/permalink';
 import { fetchPost, type FetchedPost } from '$lib/server/ingestion/fetcher';
-import { removeAssets, storeAsset } from '$lib/server/media/storage';
+import { removeAssets, storeAsset, storeUploadedAsset } from '$lib/server/media/storage';
 
 /** Every post column except `rawPayload`; see the note on {@link PostRecord}. */
 const postColumns = Object.fromEntries(
@@ -242,6 +242,62 @@ export async function createManualPost(input: ManualPostInput): Promise<PostReco
 	await insertMedia(rows);
 
 	return requirePost(created.id);
+}
+
+/** A photo and caption sent from the public submission page. */
+export type SubmittedPostInput = {
+	/** Who sent it, as they chose to be credited. */
+	authorName: string;
+	caption: string;
+	image: { bytes: Uint8Array; contentType: string };
+};
+
+/**
+ * Saves a photo sent from the public submission page as a post awaiting review.
+ *
+ * The image is stored first and the post and its media row are written together
+ * in one batch, so the queue never shows a submission without its photo. Unlike a
+ * pasted link's media there is nothing to download: the row is `cached` from the
+ * start, and its `sourceUrl` is the stored copy, since there is no other source.
+ */
+export async function createSubmittedPost(input: SubmittedPostInput): Promise<string> {
+	const postId = crypto.randomUUID();
+	const mediaId = crypto.randomUUID();
+	const stored = await storeUploadedAsset(mediaId, input.image.bytes, input.image.contentType);
+
+	try {
+		await database().batch([
+			database().insert(post).values({
+				id: postId,
+				platform: 'manual',
+				origin: 'upload',
+				authorName: input.authorName,
+				body: input.caption,
+				postedAt: new Date(),
+				resolutionState: 'complete',
+				reviewState: 'pending'
+			}),
+			database()
+				.insert(media)
+				.values({
+					id: mediaId,
+					postId,
+					role: 'attachment',
+					kind: input.image.contentType === 'image/gif' ? 'animation' : 'image',
+					position: 0,
+					sourceUrl: `/media/${stored.key}`,
+					cachedPath: stored.key,
+					cacheState: 'cached',
+					byteLength: stored.byteLength,
+					contentType: stored.contentType
+				})
+		]);
+	} catch (error) {
+		await removeAssets([stored.key]).catch(() => undefined);
+		throw error;
+	}
+
+	return postId;
 }
 
 /**

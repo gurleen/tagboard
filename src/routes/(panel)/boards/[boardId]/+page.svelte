@@ -24,7 +24,12 @@
 		updateBoard,
 		type BoardPatch
 	} from '$lib/remote/boards.remote';
-	import { BOARD_LAYOUTS, BOARD_TRANSITIONS } from '$lib/database/schema';
+	import {
+		BOARD_LAYOUTS,
+		BOARD_TRANSITIONS,
+		SUBMISSION_CODE_POSITIONS,
+		type SubmissionCodePosition
+	} from '$lib/database/schema';
 	import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 	import ArrowUpIcon from '@lucide/svelte/icons/arrow-up';
 	import ArrowDownIcon from '@lucide/svelte/icons/arrow-down';
@@ -33,6 +38,14 @@
 	import LayoutGridIcon from '@lucide/svelte/icons/layout-grid';
 
 	const boardId = $derived(page.params.boardId!);
+
+	const SUBMISSION_CODE_POSITION_LABELS: Record<SubmissionCodePosition, string> = {
+		hidden: 'Hidden',
+		'top-left': 'Top left',
+		'top-right': 'Top right',
+		'bottom-left': 'Bottom left',
+		'bottom-right': 'Bottom right'
+	};
 
 	let record = $state<BoardRecord | null>(null);
 	let entries = $state<BoardEntryRecord[]>([]);
@@ -236,6 +249,39 @@
 						onCheckedChange={(checked) => patch('showPlatformBadge', checked)}
 					/>
 					<Label for="show-platform">Platform badge</Label>
+				</div>
+			</Card.Content>
+		</Card.Root>
+
+		<Card.Root>
+			<Card.Header>
+				<Card.Title>Submission code</Card.Title>
+				<Card.Description>
+					A QR code in one corner of the output, linking to a page where anyone can send a photo and
+					a caption. Submissions arrive in the review queue; none reaches the board unless it is
+					approved. Open, close and revoke the link on the Settings page.
+				</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				<div class="space-y-1.5 sm:max-w-xs">
+					<Label for="board-submission-code">Corner</Label>
+					<Select.Root
+						type="single"
+						value={record.submissionCodePosition}
+						onValueChange={(value) =>
+							patch('submissionCodePosition', value as SubmissionCodePosition)}
+					>
+						<Select.Trigger id="board-submission-code">
+							{SUBMISSION_CODE_POSITION_LABELS[record.submissionCodePosition]}
+						</Select.Trigger>
+						<Select.Content>
+							{#each SUBMISSION_CODE_POSITIONS as position (position)}
+								<Select.Item value={position}>
+									{SUBMISSION_CODE_POSITION_LABELS[position]}
+								</Select.Item>
+							{/each}
+						</Select.Content>
+					</Select.Root>
 				</div>
 			</Card.Content>
 		</Card.Root>

@@ -76,6 +76,23 @@ export async function storeAsset(assetId: string, sourceUrl: string): Promise<St
 	return { key, byteLength: stored.size, contentType };
 }
 
+/**
+ * Stores bytes the Worker already holds — a photo sent from the submission page —
+ * under a key derived from `assetId`, the same way {@link storeAsset} names a
+ * download.
+ */
+export async function storeUploadedAsset(
+	assetId: string,
+	bytes: Uint8Array,
+	contentType: string
+): Promise<StoredAsset> {
+	const key = `${assetId}.${EXTENSIONS_BY_CONTENT_TYPE[contentType] ?? 'bin'}`;
+	const stored = await bindings().MEDIA.put(key, bytes as Parameters<R2Bucket['put']>[1], {
+		httpMetadata: { contentType }
+	});
+	return { key, byteLength: stored.size, contentType };
+}
+
 /** Deletes cached objects. Absent keys are not an error; the caller's intent is that they be gone. */
 export async function removeAssets(keys: string[]): Promise<void> {
 	if (keys.length > 0) await bindings().MEDIA.delete(keys);

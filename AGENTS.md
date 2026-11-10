@@ -62,6 +62,8 @@ joining. This is deliberate; see the note on `attachMediaToAll` in
   `await`. Do not remove it.
 - `/output` and `/media` are public, guarded by the output key rather than Cloudflare Access. Anything
   added under them is reachable by anyone who has an output URL.
+- `/submit` is public too, guarded by the submission key, which the wall shows to the whole room as a
+  QR code. Anything added under it is reachable by anyone who has seen the screen.
 
 ## Interface
 

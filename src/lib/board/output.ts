@@ -13,9 +13,19 @@ import type { BoardRecord } from '$lib/database/records';
 /** The output target that follows the board on air. */
 export const LIVE_OUTPUT_TARGET = 'live';
 
+/** What the state endpoint answers with. */
+export type OutputSnapshot = {
+	record: BoardRecord | null;
+	/**
+	 * The key for the submission QR code, or `null` when the board draws none or
+	 * submissions are closed.
+	 */
+	submissionKey: string | null;
+};
+
 /** What one poll of an output found. */
 export type OutputState =
-	| { status: 'ready'; record: BoardRecord | null }
+	| ({ status: 'ready' } & OutputSnapshot)
 	/** The key was refused — regenerated since the URL was copied, most likely. */
 	| { status: 'refused' }
 	/** The server could not be reached or failed; the output keeps what it has. */
@@ -39,7 +49,7 @@ export async function readOutputState(target: string, key: string): Promise<Outp
 
 	if (response.status === 403) return { status: 'refused' };
 	if (!response.ok) return { status: 'unavailable' };
-	return { status: 'ready', record: parse(await response.text()) as BoardRecord | null };
+	return { status: 'ready', ...(parse(await response.text()) as OutputSnapshot) };
 }
 
 /** Records that an output has just displayed these entries. */

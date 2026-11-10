@@ -9,6 +9,7 @@ Cloudflare Worker that serves the client assets and runs every server route.
 | -------- | --------------------------------------- | -------------------------------- | ------------------------ |
 | Operator | `/`, `/library`, `/boards`, `/settings` | A browser                        | Cloudflare Access        |
 | Output   | `/output/[target]`, `/media/[name]`     | An OBS browser source, or a wall | The output key (`?key=`) |
+| Audience | `/submit`                               | A phone, from the wall's QR code | The submission key       |
 
 The route group `(panel)` carries the sidebar and menu bar. `/output` sits outside that group, so an
 output loads no panel chrome at all.
@@ -46,6 +47,7 @@ path that matches:
 | ----------------- | ------------------------------------------------------------- |
 | `/output`         | The output page and its two endpoints                         |
 | `/media`          | The cached images and video a board shows                     |
+| `/submit`         | The public submission page and its two endpoints              |
 | `/_app/immutable` | The JavaScript and CSS bundles every page, outputs too, loads |
 
 `/_app/remote`, where the panel's commands are served, must stay behind Access. A bypass on all of
@@ -53,6 +55,27 @@ path that matches:
 
 The output endpoints check the key themselves (`$lib/server/output.ts`); `/media` does not, because
 its assets are copies of public posts named by unguessable identifiers.
+
+### Public submissions
+
+`/submit?key=…` is a page anyone can open from the QR code an output draws when its board's
+`submission_code_position` names a corner. It sends one photo and a caption to `/submit/upload`,
+which writes a post with origin `upload` into the review queue; nothing reaches a board until an
+operator approves it. `/submit/status` tells the page beforehand whether the key is good and
+submissions are open.
+
+The submission key is separate from the output key: the wall shows it to everyone in the room, so it
+must grant nothing but sending a photo. The operator closes submissions, or replaces the key to
+revoke every code already scanned, from Settings. An output's state includes the key only while its
+board shows the code and submissions are open.
+
+The page scales a photo to at most 2048 pixels on its longest edge and re-encodes it as JPEG before
+sending, which keeps uploads small, turns HEIC into something every browser draws, and strips the
+photo's metadata, its location included. A GIF is sent as it is. The server does not trust the page:
+it enforces the size and length limits in `$lib/submission/endpoints.ts` again, and decides the
+image format from the file's leading bytes rather than the type the browser reported, because
+`/media` serves the file back under that type. There is no rate limit beyond the key; if one is
+needed, a Cloudflare rate-limiting rule on `/submit/upload` is the place for it.
 
 ## The panel reaches the server through remote commands
 
@@ -131,6 +154,7 @@ lib/database/              schema, and the record shapes the client and server s
 lib/ingestion/             permalink parsing, used on both sides
 lib/media/                 media URLs and formatting
 lib/board/                 output URLs and the output's endpoint bindings
+lib/submission/            the submission page's endpoint bindings and limits
 ```
 
 Everything under `lib/server` is server-only, and SvelteKit refuses to bundle it into the client.

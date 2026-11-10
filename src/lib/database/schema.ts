@@ -28,11 +28,13 @@ export type Platform = (typeof PLATFORMS)[number];
 /**
  * How a post entered the system.
  *
+ * `upload` is a photo sent from the public submission page, `/submit`.
+ *
  * `search` is reserved for the saved-search fetcher that is not built yet; no
  * code produces it today, but the value exists so adding the feature does not
  * require a migration of the enum.
  */
-export const POST_ORIGINS = ['url', 'manual', 'search'] as const;
+export const POST_ORIGINS = ['url', 'manual', 'upload', 'search'] as const;
 export type PostOrigin = (typeof POST_ORIGINS)[number];
 
 /**
@@ -169,6 +171,19 @@ export type BoardLayout = (typeof BOARD_LAYOUTS)[number];
 export const BOARD_TRANSITIONS = ['fade', 'slide', 'none'] as const;
 export type BoardTransition = (typeof BOARD_TRANSITIONS)[number];
 
+/**
+ * Where the output draws the QR code that links to the public submission page,
+ * or `hidden` to leave it off.
+ */
+export const SUBMISSION_CODE_POSITIONS = [
+	'hidden',
+	'top-left',
+	'top-right',
+	'bottom-left',
+	'bottom-right'
+] as const;
+export type SubmissionCodePosition = (typeof SUBMISSION_CODE_POSITIONS)[number];
+
 /** Visual settings for a board, stored as one JSON column rather than a wide row. */
 export type BoardTheme = {
 	backgroundColor: string;
@@ -218,6 +233,11 @@ export const board = sqliteTable(
 		showMetrics: integer('show_metrics', { mode: 'boolean' }).notNull().default(false),
 		showTimestamp: integer('show_timestamp', { mode: 'boolean' }).notNull().default(true),
 		showPlatformBadge: integer('show_platform_badge', { mode: 'boolean' }).notNull().default(true),
+
+		/** Corner of the output that carries the submission QR code. */
+		submissionCodePosition: text('submission_code_position', { enum: SUBMISSION_CODE_POSITIONS })
+			.notNull()
+			.default('hidden'),
 
 		theme: text('theme', { mode: 'json' })
 			.$type<BoardTheme>()

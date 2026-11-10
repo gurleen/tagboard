@@ -26,6 +26,7 @@ export type BoardPatch = Partial<
 		| 'showMetrics'
 		| 'showTimestamp'
 		| 'showPlatformBadge'
+		| 'submissionCodePosition'
 		| 'theme'
 	>
 >;

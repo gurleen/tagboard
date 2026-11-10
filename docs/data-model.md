@@ -16,14 +16,14 @@ Conventions across every table:
 
 One social media post, however it arrived.
 
-| Group      | Columns                                                                                                        |
-| ---------- | -------------------------------------------------------------------------------------------------------------- |
-| Source     | `platform` (`x`, `instagram`, `manual`), `origin` (`url`, `manual`, `search`), `platform_post_id`, `permalink` |
-| Author     | `author_name`, `author_handle`, `author_profile_url`, `author_verified`                                        |
-| Content    | `body`, `language`, `posted_at`                                                                                |
-| Engagement | `like_count`, `repost_count`, `reply_count`                                                                    |
-| Retrieval  | `resolution_state` (`pending`, `resolving`, `complete`, `failed`), `resolution_error`, `raw_payload`           |
-| Review     | `review_state` (`pending`, `approved`, `rejected`, `archived`), `reviewed_at`, `review_note`, `starred`        |
+| Group      | Columns                                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Source     | `platform` (`x`, `instagram`, `manual`), `origin` (`url`, `manual`, `upload`, `search`), `platform_post_id`, `permalink` |
+| Author     | `author_name`, `author_handle`, `author_profile_url`, `author_verified`                                                  |
+| Content    | `body`, `language`, `posted_at`                                                                                          |
+| Engagement | `like_count`, `repost_count`, `reply_count`                                                                              |
+| Retrieval  | `resolution_state` (`pending`, `resolving`, `complete`, `failed`), `resolution_error`, `raw_payload`                     |
+| Review     | `review_state` (`pending`, `approved`, `rejected`, `archived`), `reviewed_at`, `review_note`, `starred`                  |
 
 `unique(platform, platform_post_id)` means the same post cannot be ingested twice; pasting a link
 that is already in the library returns the existing record rather than a duplicate. Indexes cover
@@ -36,6 +36,10 @@ hand.
 
 `raw_payload` keeps whatever the provider returned. Nothing reads it yet; it is there so a provider
 change does not lose data that was already fetched.
+
+A photo sent from the public submission page is a `manual` post with origin `upload`. Its one
+attachment is stored in R2 before the row is written, so its media row is `cached` from the start and
+its `source_url` is the stored copy's `/media` path.
 
 `origin` includes `search`, which is unused. Saved searches were considered and deferred; the value
 is reserved so adding them later does not need a migration.
@@ -71,6 +75,7 @@ One video wall output: a grid shape, a rotation speed, and a look.
 | `rotation_interval_ms`                                           | 8000                  |
 | `transition` (`fade`, `slide`, `none`), `transition_duration_ms` | `fade`, 600           |
 | `show_metrics`, `show_timestamp`, `show_platform_badge`          | off, on, on           |
+| `submission_code_position` (`hidden`, or a corner)               | `hidden`              |
 | `theme`                                                          | `DEFAULT_BOARD_THEME` |
 | `is_live`                                                        | false                 |
 
@@ -98,9 +103,11 @@ A post's place on a board. Cascades from both sides.
 
 A key–value table with a JSON value, for panel preferences that do not deserve a column.
 
-| Key          | Value                                                                  |
-| ------------ | ---------------------------------------------------------------------- |
-| `output_key` | The secret every output URL carries; generated on first use, see below |
+| Key                | Value                                                                  |
+| ------------------ | ---------------------------------------------------------------------- |
+| `output_key`       | The secret every output URL carries; generated on first use, see below |
+| `submission_key`   | The secret the public submission URL and its QR code carry             |
+| `submissions_open` | `false` once the operator closes submissions; open when absent         |
 
 `output_key` is what guards `/output/…`, which OBS loads and which cannot sit behind Cloudflare
 Access. It is 192 random bits, compared in constant time, and regenerated from Settings to revoke

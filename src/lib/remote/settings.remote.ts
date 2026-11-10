@@ -1,3 +1,4 @@
+import * as v from 'valibot';
 import { command } from '$app/server';
 import { describeProviders as describeRegisteredProviders } from '$lib/server/ingestion/fetcher';
 import * as posts from '$lib/server/repository/posts';
@@ -17,3 +18,11 @@ export const storedByteLength = command(() => posts.storedByteLength());
 export const outputKey = command(() => settings.outputKey());
 
 export const regenerateOutputKey = command(() => settings.regenerateOutputKey());
+
+export const submissionKey = command(() => settings.submissionKey());
+
+export const regenerateSubmissionKey = command(() => settings.regenerateSubmissionKey());
+
+export const submissionsOpen = command(() => settings.submissionsOpen());
+
+export const setSubmissionsOpen = command(v.boolean(), (open) => settings.setSubmissionsOpen(open));

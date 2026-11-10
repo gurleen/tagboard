@@ -4,6 +4,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import type { TransitionConfig } from 'svelte/transition';
 	import BoardPostTile from '$lib/components/board-post-tile.svelte';
+	import SubmissionCode from '$lib/components/submission-code.svelte';
 	import { LIVE_OUTPUT_TARGET, readOutputState, recordOutputAired } from '$lib/board/output';
 	import { pageSize, type BoardRecord } from '$lib/database/records';
 	import { DEFAULT_BOARD_THEME, type BoardTheme } from '$lib/database/schema';
@@ -23,6 +24,8 @@
 	const key = page.url.searchParams.get('key') ?? '';
 
 	let record = $state<BoardRecord | null>(null);
+	/** Set when the board draws a submission QR code and submissions are open. */
+	let submissionKey = $state<string | null>(null);
 	/**
 	 * False until the first poll answers, so a source coming up in OBS shows the
 	 * bare background rather than flashing a standby message.
@@ -77,6 +80,7 @@
 
 		loaded = true;
 		refused = state.status === 'refused';
+		submissionKey = state.status === 'ready' ? state.submissionKey : null;
 		const next = state.status === 'ready' ? state.record : null;
 		const nextSignature = describe(next);
 		if (nextSignature === signature) return;
@@ -190,6 +194,10 @@
 			{/key}
 		</div>
 	{/if}
+
+	{#if record && submissionKey && record.submissionCodePosition !== 'hidden'}
+		<SubmissionCode position={record.submissionCodePosition} {submissionKey} />
+	{/if}
 </main>
 
 <style>
@@ -200,6 +208,7 @@
 	}
 
 	.board {
+		position: relative;
 		width: 100vw;
 		height: 100vh;
 		box-sizing: border-box;
